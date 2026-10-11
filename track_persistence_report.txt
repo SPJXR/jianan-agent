@@ -1,0 +1,11 @@
+首次上报 accepted                    : 3
+重启前计数                            : {'chat_submitted': 2, 'citation_opened': 1}
+持久化标志 persistent                 : True
+服务已停止                            : ok
+重启后计数                            : {'chat_submitted': 2, 'citation_opened': 1}
+★ 重启后计数保留                        : PASS
+history 天数                       : 1
+落盘表结构                            : ['day', 'event', 'n']
+落盘行                              : [('20261011', 'chat_submitted', 2), ('20261011', 'citation_opened', 1)]
+★ 落盘文件含问题原文?                     : PASS 未存原文
+事件名均为白名单标识符                      : PASS

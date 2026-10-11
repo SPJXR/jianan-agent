@@ -1,0 +1,65 @@
+{
+  "0003_3acdec36-bd9f-4c08-99bf-4e025d866986.pdf": {
+    "size_mb": 3.95,
+    "pages": 3,
+    "total_chars": 0,
+    "cjk_chars": 0,
+    "sample": "",
+    "verdict": "NO_TEXT_LAYER(SCAN?)"
+  },
+  "0004_6f4ef704726bdea17f1f4979746e9faa.pdf": {
+    "size_mb": 79.76,
+    "pages": 1,
+    "total_chars": 39,
+    "cjk_chars": 17,
+    "sample": "基 底 软 硬 不 均 ( × ) 垫 板 剪 刀 撑 水 平 杆 扫 地 杆",
+    "verdict": "NO_TEXT_LAYER(SCAN?)"
+  },
+  "0017_W020160603040451.pdf": {
+    "size_mb": 50.38,
+    "pages": 84,
+    "total_chars": 5797,
+    "cjk_chars": 2304,
+    "sample": "工程项目施工人员 安全指导手册 住房和城乡建设部工程质量安全监管司组织编写 本书编制人员 编写人员：  张晓葵、姜  华、王静宇、刘卫权                   夏军利、王  磊、于  强、黄殿来                ",
+    "verdict": "TEXT_OK"
+  },
+  "0064_B4607654B32C4DDBC11520E6E6170472.pdf": {
+    "size_mb": 0.23,
+    "pages": 14,
+    "total_chars": 6134,
+    "cjk_chars": 5135,
+    "sample": "-1- 住房和城乡建设部规章 X 住房和城乡建设部发布 建筑施工特种作业人员管理规定 (2025 年 12 月 17 日中华人民共和国住房和城乡建设部令 第 60 号公布 自 2026 年 6 月 1 日起施行) 第一章 总则 第一条 为了",
+    "verdict": "TEXT_OK"
+  },
+  "0069_EBE51C6F0F320595646D5103BC809FE7.pdf": {
+    "size_mb": 7.34,
+    "pages": 32,
+    "total_chars": 22298,
+    "cjk_chars": 13866,
+    "sample": "房屋市政工程有限空间识别 及施工安全作业指南（试行） 2025年 6月 目 录 1 总则与基本规定 ............................................................1 1.1 编制目的",
+    "verdict": "TEXT_OK"
+  },
+  "0073_0695054156A3F03D65523C5EDA45B8F0.pdf": {
+    "size_mb": 0.26,
+    "pages": 28,
+    "total_chars": 14165,
+    "cjk_chars": 11383,
+    "sample": "— 2 — 房屋市政工程施工安全 监督人员培训考核大纲（试行） 第一部分：培训考核说明 一、培训考核目的 房屋市政工程施工安全监督人员是对房屋建筑和市政基础设施工程的建设责任 主体履行安全生产职责，执行法律、法规、规章、制度及工程建设强制性",
+    "verdict": "TEXT_OK"
+  },
+  "0002_28e4f67b-d262-4020-bd50-142ef860bcee.docx": {
+    "paragraphs": 2,
+    "tables": 1,
+    "total_chars": 9,
+    "sample": "附件 联系人信息表"
+  },
+  "0070_88ABAF4D94E6EE16C6F5CF1C5C4E1CC4.docx": {
+    "paragraphs": 365,
+    "tables": 9,
+    "total_chars": 13470,
+    "sample": "附件 房屋市政工程有限空间识别 及施工安全作业指南 （征求意见稿） 2025年3月 目  录 1 总则与基本规定\t1 1.1 编制目的\t1 1.2 适用范围\t1 1.3 术  语\t1 1.4 基本规定\t2 2 有限空间识别与方案\t4 2.1"
+  },
+  "0001_D2A0AFEC10FC599BDE6F1677484C05EE.doc": {
+    "error": "PackageNotFoundError: Package not found at 'C:\\Users\\30832\\WorkBuddy\\2026-09-19-17-37-04\\knowledge_base\\docs\\0001_D2A0AFEC10FC599BDE6F1677484C05EE.doc'"
+  }
+}

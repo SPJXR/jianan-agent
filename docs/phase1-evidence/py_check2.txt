@@ -1,0 +1,16 @@
+﻿venv python exists: True
+version: Python 3.13.14
+--- versions dir ---
+.locks, 3.13.12, current
+--- key packages ---
+fastapi: NOT_INSTALLED
+uvicorn: NOT_INSTALLED
+pypdf: 6.19.0
+pdfplumber: NOT_INSTALLED
+python-docx: 1.2.0
+pywin32: NOT_INSTALLED
+chromadb: NOT_INSTALLED
+faiss-cpu: NOT_INSTALLED
+rank-bm25: NOT_INSTALLED
+openai: NOT_INSTALLED
+httpx: 0.28.1

@@ -1,0 +1,323 @@
+# -*- coding: utf-8 -*-
+"""建安法规问答助手后端：SSE 流式问答 + 检索降级 + 知识库来源 + 限流"""
+import asyncio
+import collections
+import json
+import time
+from pathlib import Path
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+
+from . import config, llm, prompts, retrieval, track
+
+app = FastAPI(title="建安法规问答助手")
+app.include_router(track.router)
+
+WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+
+# ---- 简易 IP 限流（防 Key 盗刷，PRD P0）----
+_rate: dict[str, collections.deque] = {}
+
+
+def _rate_ok(ip: str) -> bool:
+    now = time.time()
+    dq = _rate.setdefault(ip, collections.deque())
+    while dq and now - dq[0] > 60:
+        dq.popleft()
+    if len(dq) >= config.RATE_LIMIT_PER_MIN:
+        return False
+    dq.append(now)
+    return True
+
+
+def _sse(event: str, data: dict) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+def _clean_history(raw) -> list[dict]:
+    """清洗多轮 history（F6）：最多 6 条（3 轮）；role 合法；content 非空且 ≤2000 字；
+    assistant content 截断至 500 字；非法条目直接丢弃。"""
+    if not isinstance(raw, list):
+        return []
+    out = []
+    for item in raw[:6]:
+        if not isinstance(item, dict):
+            continue
+        role = item.get("role")
+        if role not in ("user", "assistant"):
+            continue
+        content = item.get("content")
+        if not isinstance(content, str):
+            continue
+        content = content.strip()
+        if not content or len(content) > 2000:
+            continue
+        if role == "assistant":
+            content = content[:500]
+        out.append({"role": role, "content": content})
+    return out
+
+
+def _sources_payload(hits: list[dict]) -> list[dict]:
+    """引用契约：{no, docId, title, clause, pages, excerpt(逐字), full(逐字全文), validStatus}"""
+    out = []
+    for i, h in enumerate(hits, 1):
+        text = h["text"].strip()
+        out.append({
+            "no": i,
+            "docId": h["doc_id"],
+            "chunkId": h["chunk_id"],
+            "title": h["title"],
+            "category": h.get("category", ""),
+            "clause": (h.get("clause") or "").strip(),
+            "pages": h.get("pages") or "",
+            "validStatus": (h.get("valid_status") or "").strip(),
+            "excerpt": text[:220] + ("…" if len(text) > 220 else ""),
+            "full": text,
+        })
+    return out
+
+
+def _degraded_markdown(hits: list[dict], weak: bool = False) -> str:
+    """降级模式的回答：直接逐字展示命中条款原文"""
+    if weak:
+        lines = [
+            "**模型服务暂不可用，且未检索到与问题直接相关的条款。**",
+            "",
+            "以下仅为字面相似的内容片段，**请勿作为依据**；配置模型服务后可获得更准确的判定：",
+            "",
+        ]
+        hits = hits[:3]
+    else:
+        lines = ["**以下为知识库检索到的原文片段，请直接核对：**", ""]
+    for s in _sources_payload(hits):
+        loc = f"《{s['title']}》{s['clause']}".strip()
+        if s["pages"]:
+            loc += f"（{s['pages']}）"
+        lines.append(f"[{s['no']}] {loc}")
+        lines.extend("> " + ln for ln in s["full"][:400].splitlines())
+        lines.append("")
+    return "\n".join(lines)
+
+
+async def _chat_stream(question: str, history: list = None, role: str = "default"):
+    yield _sse("status", {"stage": "retrieving", "message": "正在检索法规库"})
+
+    # ---- 检索（F6）：上一问仅作扩召回补充，相关度只按当前问题计算 ----
+    # 旧实现把上一问拼进 query 计算覆盖率，会稀释相关度（如 A9「开工流程」被上一问
+    # 「震后专家队」带偏），2026-09-21 线上反馈根因之一。
+    context_query = ""
+    if history:
+        for h in reversed(history):
+            if h["role"] == "user":
+                context_query = h["content"]
+                break
+    if context_query == question:
+        context_query = ""
+
+    try:
+        hits, top_cov = await asyncio.to_thread(
+            retrieval.hybrid_search, question, config.RECALL_WINDOW, context_query)
+    except Exception:  # 检索库损坏等极端情况
+        yield _sse("error", {"code": "retrieval", "message": "知识库检索异常，请联系管理员"})
+        yield _sse("done", {"backend": "error", "role": role})
+        return
+
+    # ---- 两阶段检索：弱命中时用 LLM 把口语问题改写为规范术语后重检 ----
+    # 跨过口语化表述与法规术语的词汇鸿沟（挖坑底下干活 -> 有限空间作业）。
+    # 仅在弱命中路径付出一次 8 秒内的小查询代价；改写失败则沿用原结果。
+    # 弱命中（覆盖率低于 REWRITE_MIN_COVERAGE）才改写：强命中问题无需多付一次 LLM 查询
+    if (not hits or top_cov < config.REWRITE_MIN_COVERAGE) and config.llm_configured():
+        yield _sse("status", {"stage": "rewriting", "message": "正在换一种方式检索"})
+        rewritten = await llm.rewrite_query(question, history)
+        if rewritten and rewritten != question:
+            try:
+                hits2, top2 = await asyncio.to_thread(
+                    retrieval.hybrid_search, rewritten, config.RECALL_WINDOW)
+            except Exception:
+                hits2, top2 = [], 0.0
+            if top2 > top_cov:
+                hits, top_cov = hits2, top2
+
+    # ---- 上下文装配（迭代6）：top-8 主证据 + 同文档补位（≤6 条）----
+    # 答案块可能排在 9~16 位（同文档表格碎片/邻近条款稀释，2026-09-23 线上反馈：
+    # DEF-04 氧气 19.5%~23.5% 块排 11 / DEF-08 附件3 颜色块排 13 / PM-06 特殊
+    # 建设工程清单块排 9）。只把与主证据同文档的窗口内块补进上下文，限制噪音规模。
+    # ADR-005：窗口扩到 16 后补位仍按 ADR-004 契约截 ≤6 条——实测 16 条全量
+    # 装配时 deepseek 对长上下文中排后的答案块拒答（DEF-04 复现两次），
+    # 截回 14 条后答案块（supp[4]）保留、上下文长度回到 v5.1 水平。
+    # PM-06 一类高层块（supp[6]）恰在截断线内，窗口 16 的排名收益不丢。
+    primary = hits[:config.RETRIEVAL_TOP_K]
+    primary_docs = {h["doc_id"] for h in primary}
+    supplement = [h for h in hits[config.RETRIEVAL_TOP_K:]
+                  if h["doc_id"] in primary_docs][:6]
+    context_hits = primary + supplement
+    top_cov = max((h["coverage"] for h in primary), default=0.0)
+
+    yield _sse("status", {"stage": "retrieved", "hits": len(context_hits),
+                          "docs": len({h["doc_id"] for h in context_hits})})
+
+    # ---- 知识库无答案兜底（AC1.3）----
+    if not context_hits or top_cov < config.MIN_COVERAGE:
+        sources = _sources_payload(context_hits[:3])
+        yield _sse("sources", {"sources": sources})
+        text = (
+            f"{config.NO_ANSWER_TEXT}\n\n"
+            "可能的原因：\n"
+            "- 问题涉及知识库收录的 34 份文档之外的内容\n"
+            "- 表述过于口语化，可尝试使用规范术语\n\n"
+            "建议换个问法，或点击顶部「知识库来源」查看本助手能回答的文档范围。"
+        )
+        yield _sse("delta", {"text": text})
+        yield _sse("done", {"backend": "no_answer", "coverage": top_cov, "role": role})
+        return
+
+    sources = _sources_payload(context_hits)
+
+    # ---- 未配置 LLM：降级展示原文（非功能需求 / AC9.2）----
+    if not config.llm_configured():
+        weak = top_cov < 0.55  # 相关度不高时不误导用户
+        if weak:
+            sources = sources[:3]
+        yield _sse("sources", {"sources": sources})
+        yield _sse("notice", {"message": "管理员尚未配置模型服务" + ("" if weak else "，以下为检索到的原文片段")})
+        yield _sse("delta", {"text": _degraded_markdown(context_hits, weak=weak)})
+        yield _sse("done", {"backend": "retrieval", "citations": len(sources),
+                            "coverage": top_cov, "role": role})
+        return
+
+    yield _sse("sources", {"sources": sources})
+
+    # ---- LLM 流式生成（角色化提示词，迭代5/ADR-003）----
+    answer_started = False
+    try:
+        buf = ""
+        async for delta in llm.stream_chat(sources, question, history=history, role=role):
+            answer_started = True
+            buf += delta
+            yield _sse("delta", {"text": delta})
+        yield _sse("done", {"backend": "llm", "citations": len(sources),
+                            "answer_chars": len(buf), "role": role})
+    except llm.LLMError as e:
+        if not answer_started:
+            # 一个字都没生成：降级为原文展示（PRD 可用性要求）
+            yield _sse("notice", {"message": f"{e.message}，以下为检索到的原文片段"})
+            yield _sse("delta", {"text": _degraded_markdown(hits)})
+            yield _sse("done", {"backend": "retrieval", "citations": len(sources),
+                                "role": role})
+        else:
+            yield _sse("error", {"code": e.code, "message": e.message})
+            yield _sse("done", {"backend": "error", "role": role})
+
+
+@app.post("/api/chat")
+async def chat(request: Request):
+    ip = request.client.host if request.client else "?"
+    if not _rate_ok(ip):
+        return JSONResponse(
+            {"error": {"code": "rate_limited", "message": "当前提问人数较多，请稍后重试"}},
+            status_code=429)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": {"code": "bad_request", "message": "请求格式错误"}}, status_code=400)
+    question = (body.get("question") or "").strip()
+    if not question:
+        return JSONResponse({"error": {"code": "empty", "message": "请输入问题"}}, status_code=400)
+    if len(question) > 2000:
+        return JSONResponse({"error": {"code": "too_long", "message": "问题过长，请精简到 2000 字以内"}}, status_code=400)
+
+    history = _clean_history(body.get("history"))
+    # 角色化提示词（迭代5/ADR-003）：非法/缺省一律回退 default，旧客户端零影响
+    role = prompts.normalize_role(body.get("role"))
+
+    return StreamingResponse(
+        _chat_stream(question, history, role),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.get("/api/roles")
+async def roles():
+    """角色清单（迭代5）：前端下拉数据源，default 恒在首位。"""
+    return {"roles": prompts.available_roles(), "default": prompts.DEFAULT_ROLE}
+
+
+@app.get("/api/sources")
+async def sources():
+    stats = retrieval.doc_stats()
+    categories = sorted({s["category"] for s in stats if s["category"]})
+    return {
+        "docs": stats,
+        "categories": categories,
+        "totalDocs": len(stats),
+        "indexedDocs": sum(1 for s in stats if s["n_chunks"] > 0),
+        "totalChunks": sum(s["n_chunks"] for s in stats),
+        "disclaimer": config.DISCLAIMER,
+    }
+
+
+# 示例问题：全部经检索验证可被知识库正确回答（AC3.3）
+EXAMPLE_QUESTIONS = [
+    {"q": "有限空间作业前需要检测哪些气体？", "tag": "有限空间"},
+    {"q": "建筑施工特种作业人员如何取得资格证书？", "tag": "特种作业"},
+    {"q": "建设项目开工“一件事”需要提交哪些材料？", "tag": "开工一件事"},
+    {"q": "哪些施工工艺、设备、材料是禁止使用的？", "tag": "禁限用技术"},
+    {"q": "专项施工方案有哪些严重缺陷会被判定为重大事故隐患？", "tag": "危大工程"},
+    {"q": "震后房屋建筑安全应急评估结论分为哪几级？", "tag": "应急管理"},
+]
+
+
+@app.get("/api/examples")
+async def examples():
+    return {"examples": EXAMPLE_QUESTIONS, "disclaimer": config.DISCLAIMER}
+
+
+def _hybrid_info() -> dict:
+    """向量组件诊断信息（迭代5 修复：health 原直接引用 vector_search 但未 import，
+    会 NameError 导致 status 恒为 degraded）。惰性导入，缺依赖只降级该字段。"""
+    try:
+        from . import vector_search
+        return vector_search.backend_info()
+    except Exception as e:
+        return {"hybrid": False, "err": str(e)}
+
+
+@app.get("/api/health")
+async def health():
+    try:
+        stats = retrieval.doc_stats()
+        return {
+            "status": "ok",
+            "llmConfigured": config.llm_configured(),
+            "llmModel": config.LLM_MODEL if config.llm_configured() else "",
+            "docs": len(stats),
+            "chunks": sum(s["n_chunks"] for s in stats),
+            "hybrid": _hybrid_info(),
+        }
+    except Exception as e:
+        return {"status": "degraded", "error": str(e),
+                "llmConfigured": config.llm_configured(), "hybrid": _hybrid_info()}
+
+
+@app.get("/api/config-status")
+async def config_status():
+    return {"llmConfigured": config.llm_configured(), "model": config.LLM_MODEL,
+            "disclaimer": config.DISCLAIMER}
+
+
+# ---- 静态前端 ----
+@app.get("/api/chunk/{chunk_id}")
+async def chunk(chunk_id: int):
+    ctx = retrieval.get_chunk_context(chunk_id)
+    if ctx is None:
+        return JSONResponse(
+            {"error": {"code": "not_found", "message": "条款不存在"}},
+            status_code=404)
+    return ctx
+
+
+app.mount("/", StaticFiles(directory=str(WEB_DIR), html=True), name="web")

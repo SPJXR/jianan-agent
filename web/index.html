@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>建安法规问答助手</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <!-- 历史会话侧边栏 -->
+  <aside id="historySidebar" class="history-sidebar">
+    <div class="history-head">
+      <span class="history-head-title">对话历史</span>
+      <button class="icon-btn history-close" id="historyClose" type="button" aria-label="收起历史">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <button id="newChatBtn" class="new-chat-btn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+      <span>新对话</span>
+    </button>
+    <div id="historyList" class="history-list"></div>
+  </aside>
+
+  <div id="mainCol" class="main-col">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <span class="brand-logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h20"/><path d="M4 18v-6a8 8 0 0 1 16 0v6"/><path d="M10 6V4a2 2 0 1 1 4 0v2"/><rect x="2" y="18" width="20" height="3" rx="1"/></svg>
+          </span>
+          <div class="brand-text">
+            <div class="brand-name">建安法规问答助手</div>
+            <div class="brand-sub">基于 34 份建安法规文档 · 回答可溯源至条款</div>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="historyBtn" class="source-entry" type="button" aria-label="查看对话历史">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+            <span>历史</span>
+          </button>
+          <button id="sourceBtn" class="source-entry" type="button" aria-label="查看知识库来源文档列表">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+            <span>知识库来源</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="chatMain">
+      <div id="messages" class="messages" aria-live="polite"></div>
+    </main>
+
+    <div class="composer-wrap">
+      <div class="composer-box">
+        <!-- 角色选择（迭代5）：由 /api/roles 动态填充，接口不可用时整条隐藏 -->
+        <div id="roleBar" class="role-bar" hidden>
+          <label class="role-label" for="roleSelect">回答视角</label>
+          <select id="roleSelect" class="role-select" aria-label="选择回答视角"></select>
+          <span id="roleHint" class="role-hint"></span>
+        </div>
+        <div class="composer">
+          <textarea id="input" rows="1" maxlength="2000"
+            placeholder="输入你的法规问题，Enter 发送"
+            aria-label="问题输入框"></textarea>
+          <button id="sendBtn" class="send-btn" type="button" disabled aria-label="发送问题">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+          </button>
+        </div>
+        <div class="composer-meta">
+          <span id="charCount" class="char-count"></span>
+          <span class="mini-disclaimer">回答由 AI 基于本地知识库生成，请以法规原文为准，重要事项请咨询主管部门</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="historyBackdrop" class="history-backdrop" hidden></div>
+
+<!-- 引用原文面板 -->
+<div id="citationModal" class="modal" hidden>
+  <div class="modal-mask" data-close></div>
+  <div class="citation-panel" role="dialog" aria-modal="true" aria-label="引用条款原文">
+    <div class="panel-head">
+      <div class="panel-title-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+        <span id="citeDocTitle" class="panel-doc-title"></span>
+        <button class="icon-btn" id="citeClose" aria-label="关闭" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div id="citeMeta" class="panel-meta"></div>
+    </div>
+    <div id="citeFull" class="panel-body"></div>
+    <div id="citeContext" class="cite-context-wrap" hidden></div>
+    <div class="panel-foot">
+      <button id="citeCopy" class="btn-secondary" type="button">复制条款</button>
+    </div>
+  </div>
+</div>
+
+<!-- 知识库来源面板 -->
+<div id="sourcePanel" class="modal" hidden>
+  <div class="modal-mask" data-close></div>
+  <div class="source-drawer" role="dialog" aria-modal="true" aria-label="知识库来源">
+    <div class="panel-head">
+      <div class="panel-title-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+        <span class="panel-doc-title">知识库来源</span>
+        <button class="icon-btn" id="sourceClose" aria-label="关闭" data-close>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div id="sourceSummary" class="panel-meta"></div>
+    </div>
+    <div id="sourceList" class="panel-body">
+      <div class="source-loading">正在加载知识库文档清单</div>
+    </div>
+    <div class="panel-foot source-foot">
+      <span>本助手回答仅基于以上文档生成，未收录的内容无法回答。</span>
+      <button id="exportFeedbackBtn" class="btn-secondary" type="button" hidden>导出反馈记录</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

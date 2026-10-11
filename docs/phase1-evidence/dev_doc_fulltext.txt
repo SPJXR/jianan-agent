@@ -1,0 +1,450 @@
+# 建安法规问答大模型开发文档
+## 1. 项目概述
+本项目是一个面向建筑安全法规、施工安全规范问答场景的大模型问答系统。系统采用“标准问答库优先+LoRA微调模型兜底生成”的混合架构：
+用户提问后，后端先在本地标准问答库`ss_identity_refine.json`中做相似问题匹配。
+2. 如果命中标准问答库，则直接返回数据集中的标准答案，保证高频业务问题回答稳定、准确、可控。
+3. 如果未命中标准问答库，则调用加载了LoRA适配器的DeepSeek-R1-Distill-Qwen-32B模型生成回答。
+4. 如果模型服务异常，后端会尝试降级处理，该方案不是完整的向量RAG，更准确地说是“FAQ检索直返+微调模型生成”。它适合当前这种标准问答占比较
+## 2. 核心目录结构
+```text
+/developer15/sgx
+├── App/
+│   └── main.py
+├── develop/
+│   ├── package.json
+│   └── src/
+│       ├── api/chat.ts
+│       └── stores/chat.ts
+├── model/
+│   └── deepseek-r1-32b/
+├── model_train/
+│   └── LLaMA-Factory/
+│       ├── data/
+│       │   ├── dataset_info.json
+│       │   ├── ss.json
+│       │   └── ss_identity_refine.json
+│       ├── saves/
+│       │   └── DeepSeek-R1-32B-Distill/lora/ss_identity_refine_ref/
+│       └── train_construction_identity.yaml
+└── scripts/
+    └── start_identity_stack.sh
+```
+
+
+
+
+
+重点文件说明：
+| 文件 | 作用 |
+| --- | --- |
+| `App/main.py` | FastAPI后端，负责标准问答库匹配、调用 vLLM、清洗输出和异常兜底 |
+| `scripts/start_identity_stack.sh` | 一键启动模型服务、后端服务、前端服务的脚本 |
+| `model_train/LLaMA-Factory/train_construction_identity.yaml` | LoRA 微调训练配置 |
+| `model_train/LLaMA-Factory/data/ss_identity_refine.json` | 当前训练和标准问答直返使用的数据集 |
+| `model_train/LLaMA-Factory/data/dataset_info.json` | LLaMA-Factory 数据集注册配置 |
+| `develop/src/api/chat.ts` | 前端调用后端 `/chat` 接口的封装 |
+## 3. 系统架构
+整体链路如下：
+```text
+浏览器前端
+  -> FastAPI 后端: http://127.0.0.1:9000/chat
+    -> 标准问答库 ss_identity_refine.json
+    -> 未命中时调用 vLLM/LLaMA-Factory API: http://127.0.0.1:8000/v1/chat/completions
+      -> DeepSeek-R1-Distill-Qwen-32B + LoRA adapter
+```
+当前端提交问题时，后端会按以下优先级处理：
+1. 精确匹配标准问答库。
+2. 高相似度模糊匹配标准问答库。
+3. 调用vLLM中加载了LoRA的模型。
+4. 如果vLLM异常，使用纯用户消息重试。
+5. 如果仍失败，返回相关标准答案兜底或友好错误提示。
+## 4. 模型与数据集
+4.1 基座模型
+当前基座模型路径：
+```text
+/developer15/DeepSeek-R1-Distill-Qwen-32B
+```
+本地后端备用模型默认路径：
+```text
+/developer15/sgx/model/deepseek-r1-32b
+```
+4.2 LoRA 适配器
+当前推理加载的 LoRA 适配器：
+```text
+/developer15/sgx/model_train/LLaMA-Factory/saves/DeepSeek-R1-32B-Distill/lora/ss_identity_refine_ref
+```
+启动脚本中通过`adapter_name_or_path`挂载该LoRA，因此数据集外的问题并不是调用“未微调基座模型”，而是调用“基座模型 + LoRA 微调适配器”。
+4.3 当前训练数据集
+训练配置中使用的数据集名称：
+```yaml
+dataset: ss_identity_refine
+```
+
+数据集注册位置：
+```text
+model_train/LLaMA-Factory/data/dataset_info.json
+```
+
+对应实际文件：
+```text
+model_train/LLaMA-Factory/data/ss_identity_refine.json
+```
+
+数据格式是ShareGPTQA风格：
+```json
+[
+  {
+    "messages": [
+      {
+        "role": "user",
+        "content": "问题"
+      },
+      {
+        "role": "assistant",
+        "content": "标准答案"
+      }
+    ]
+  }
+]
+```
+
+## 5. 训练配置
+训练配置文件：
+```text
+model_train/LLaMA-Factory/train_construction_identity.yaml
+```
+关键参数：
+```yaml
+stage: sft
+do_train: true
+model_name_or_path: /developer15/DeepSeek-R1-Distill-Qwen-32B
+finetuning_type: lora
+template: deepseekr1
+dataset_dir: /developer15/sgx/model_train/LLaMA-Factory/data
+dataset: ss_identity_refine
+cutoff_len: 2048
+max_samples: 1000
+num_train_epochs: 40.0
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
+learning_rate: 5.0e-5
+output_dir: /developer15/sgx/model_train/LLaMA-Factory/saves/DeepSeek-R1-32B-Distill/lora/ss_identity_refine_ref
+lora_rank: 8
+lora_alpha: 16
+lora_dropout: 0.0
+lora_target: all
+```
+
+注意事项：
+- `template` 当前训练配置是 `deepseekr1`，推理脚本中默认使用 `deepseek`。如果后续出现回答格式异常、角色串台、重复输出等问题，需要优先检查训练模板
+- `max_samples: 1000` 表示最多取 1000 条样本参与训练。如果数据集超过 1000 条但希望全部训练，需要调整该参数。
+- `val_size: 0.2` 表示 20% 数据用于验证。
+## 6. 后端接口设计
+后端入口：
+```text
+App/main.py
+```
+默认端口：
+```text
+9000
+```
+6.1 健康检查
+```http
+GET /health
+```
+作用：
+- 检查后端是否启动。
+- 检查 vLLM/LLaMA-Factory API 是否可访问。
+- 返回当前是否启用本地 Transformers fallback。
+示例：
+```bash
+curl http://127.0.0.1:9000/health
+```
+ 6.2 聊天接口
+```http
+POST /chat
+```
+请求示例：
+```bash
+curl -X POST http://127.0.0.1:9000/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {
+        "role": "user",
+        "content": "施工单位应如何建立安全生产费用管理制度？"
+      }
+    ]
+  }'
+```
+成功响应中的核心字段：
+```json
+{
+  "generated_text": "回答内容",
+  "backend": "dataset",
+  "model": "ss_identity_refine.json",
+  "matched_question": "命中的标准问题",
+  "match_type": "exact",
+  "match_score": 1.0
+}
+```
+`backend` 字段含义：
+| backend | 含义 |
+| --- | --- |
+| `dataset` | 命中标准问答库，直接返回标准答案 |
+| `vllm` | 未命中标准库，调用 LoRA 微调模型生成 |
+| `vllm_retry` | 第一次模型调用失败后，用纯用户消息重试成功 |
+| `dataset_fallback` | 模型失败后，返回相似度较高的标准答案兜底 |
+| `error_fallback` | 标准库未命中且模型失败，返回友好错误提示 |
+| `transformers` | 启用本地 fallback 时，使用 Transformers 本地推理 |
+
+6.3 调试 prompt 接口
+```http
+POST /debug/prompt
+```
+作用：
+- 查看后端实际构造出的 messages。
+- 查看 tokenizer chat template 渲染后的 prompt。
+- 排查模板不一致、角色串台、system prompt 影响等问题。
+## 7. 标准问答库匹配逻辑
+标准问答库逻辑在 `App/main.py` 中，核心函数包括：
+| 函数 | 作用 |
+| --- | --- |
+| `normalize_question` | 去除标点、空白、统一部分符号，用于问题归一化 |
+| `load_qa_pairs` | 启动后首次读取 `ss_identity_refine.json` 并缓存问答对 |
+| `find_dataset_answer` | 对用户问题进行精确匹配和模糊匹配 |
+| `sanitize_model_output` | 清理 `<think>`、重复行、角色串台内容 |
+默认阈值：
+```python
+QA_MATCH_THRESHOLD = 0.92
+QA_SUBSTRING_THRESHOLD = 0.78
+```
+含义：
+- 相似度达到 `0.92` 以上才会直接返回标准答案。
+- 如果用户问题和标准问题存在包含关系，会使用 `0.78` 作为较宽松的辅助分数。
+如果标准答案命中过于宽松，可以提高 `QA_MATCH_THRESHOLD`。如果很多近似问法无法命中，可以适当降低该值，例如 `0.88`。
+## 8. 推理参数
+后端默认推理参数：
+```python
+DEFAULT_MAX_TOKENS = 160
+DEFAULT_OPEN_MAX_TOKENS = 256
+DEFAULT_TEMPERATURE = 0.2
+DEFAULT_TOP_P = 0.8
+DEFAULT_REPETITION_PENALTY = 1.3
+```
+参数说明：
+| 参数 | 当前值 | 作用 |
+| --- | --- | --- |
+| `DEFAULT_MAX_TOKENS` | `160` | 普通请求默认生成长度 |
+| `DEFAULT_OPEN_MAX_TOKENS` | `256` | 未命中标准库的问题会提升到该长度，避免开放问题回答不全 |
+| `temperature` | `0.2` | 较低随机性，回答更稳定 |
+| `top_p` | `0.8` | 控制采样范围 |
+| `repetition_penalty` | `1.3` | 抑制重复输出 |
+
+调参建议：
+- 回答经常不完整：提高 `DEFAULT_OPEN_MAX_TOKENS`，例如 `320`。
+- 回答重复、停不下来：降低 `DEFAULT_OPEN_MAX_TOKENS`，或提高 `repetition_penalty`。
+- 回答过于发散：降低 `temperature`。
+- 回答太死板：略微提高 `temperature`，例如 `0.3`。
+## 9. 启动方式
+统一启动脚本：
+```text
+scripts/start_identity_stack.sh
+```
+
+9.1 启动模型服务
+```bash
+cd /developer15/sgx
+bash scripts/start_identity_stack.sh model
+```
+模型服务默认端口：
+```text
+8000
+```
+健康检查：
+```bash
+curl http://127.0.0.1:8000/v1/models
+```
+9.2 启动后端
+```bash
+cd /developer15/sgx
+bash scripts/start_identity_stack.sh backend
+```
+后端默认端口：
+```text
+9000
+```
+健康检查：
+```bash
+curl http://127.0.0.1:9000/health
+```
+9.3 启动前端
+```bash
+cd /developer15/sgx
+bash scripts/start_identity_stack.sh frontend
+```
+前端开发服务默认端口：
+```text
+5173
+```
+浏览器访问：
+```text
+http://127.0.0.1:5173
+```
+9.4 一键检查
+```bash
+cd /developer15/sgx
+bash scripts/start_identity_stack.sh health
+```
+## 10. 前端调用方式
+前端请求封装文件：
+```text
+develop/src/api/chat.ts
+```
+当前前端会向：
+```text
+/chat
+```
+发送 POST 请求。实际后端地址由 `VITE_API_BASE_URL` 控制。如果未配置，默认使用相对路径。
+如果前端和后端分端口运行，建议配置：
+```bash
+VITE_API_BASE_URL=http://127.0.0.1:9000
+```
+
+请求体格式：
+```ts
+{
+  messages: [
+    { role: 'system', content: '你是一个专业、严谨的助手。' },
+    { role: 'user', content: '用户问题' }
+  ]
+}
+```
+后端目前会在调用 vLLM 前去掉 `system` 消息，主要是为了减少当前模型出现角色串台、多轮自问自答等问题。
+
+## 11. 常见问题与排查
+11.1 数据集内问题为什么完全一样？
+因为后端命中了标准问答库，直接返回 `ss_identity_refine.json` 中的 assistant 内容。这一步不经过大模型生成。
+11.2 数据集外问题调用的是不是没微调模型？
+不是。数据集外问题会调用 vLLM 服务，而 vLLM 服务由 `start_identity_stack.sh` 启动时加载了：
+```text
+base model: /developer15/DeepSeek-R1-Distill-Qwen-32B
+LoRA adapter: /developer15/sgx/model_train/LLaMA-Factory/saves/DeepSeek-R1-32B-Distill/lora/ss_identity_refine_ref
+```
+所以它是“基座模型 + LoRA 适配器”的微调模型。
+11.3 回答不完整怎么办？
+优先检查 vLLM 返回是否 `finish_reason = length`。如果是，说明生成长度不够。
+可以调整：
+```bash
+DEFAULT_OPEN_MAX_TOKENS=320 bash scripts/start_identity_stack.sh backend
+```
+或在 `App/main.py` 中修改：
+```python
+DEFAULT_OPEN_MAX_TOKENS = int(os.getenv("DEFAULT_OPEN_MAX_TOKENS", "256"))
+```
+11.4 回答重复怎么办？
+可以尝试：
+- 降低 `DEFAULT_OPEN_MAX_TOKENS`。
+- 提高 `DEFAULT_REPETITION_PENALTY`，例如从 `1.3` 调到 `1.35`。
+- 检查训练模板和推理模板是否一致。
+- 检查训练数据中是否存在大量重复答案或过长答案。
+11.5 前端显示 HTTP 502 怎么办？
+常见原因：
+- 模型服务 `8000` 没启动。
+- 后端 `VLLM_BASE_URL` 指错。
+- vLLM 加载模型失败或显存不足。
+- 请求超时。
+排查顺序：
+```bash
+curl http://127.0.0.1:8000/v1/models
+curl http://127.0.0.1:9000/health
+```
+如果 `/v1/models` 不通，先重启模型服务：
+```bash
+bash scripts/start_identity_stack.sh model
+```
+如果模型服务正常但后端异常，重启后端：
+```bash
+bash scripts/start_identity_stack.sh backend
+```
+11.6 修改数据集后为什么没有立刻生效？
+标准问答库在后端首次读取后会缓存在内存中。因此修改 `ss_identity_refine.json` 后，需要重启后端：
+```bash
+bash scripts/start_identity_stack.sh backend
+```
+如果修改数据集后还希望模型本身也学习这些内容，需要重新训练 LoRA。
+## 12. 开发建议
+12.1 标准问答库适合放什么？
+适合放：
+- 高频问题。
+- 必须回答得非常稳定的问题。
+- 法规条款、制度要求、标准流程类问题。
+- 不希望模型自由发挥的问题。
+
+不适合放：
+- 开放闲聊。
+- 大量百科类问题。
+- 每次都需要个性化生成的问题。
+
+12.2 什么时候需要重新训练？
+以下情况建议重新训练 LoRA：
+- 增加了大量新领域知识。
+- 希望模型在未命中标准库时也具备更强的建筑安全法规风格。
+- 模型经常出现身份错误、答非所问、格式不稳定。
+- 标准问答库覆盖不到大量同类变体问题。
+
+以下情况不一定需要重新训练：
+- 只新增几条高频标准问答。
+- 只想让某些问题严格返回固定答案。
+- 只是修正文案、条款措辞、编号错误。
+这些情况优先改 `ss_identity_refine.json` 并重启后端即可。
+
+12.3 当前方案和 RAG 的区别
+当前方案：
+```text
+问题 -> 匹配标准问答库 -> 命中则直接返回 -> 未命中再模型生成
+```
+标准向量 RAG：
+```text
+问题 -> 向量检索文档片段 -> 拼接上下文 -> 模型基于上下文生成
+```
+当前方案更轻、更稳，适合 FAQ 和标准答案场景。标准 RAG 更适合大规模文档、多来源知识、需要引用依据的场景。
+## 13. 对外部署说明
+如果要让另一台电脑或手机访问，可以将模型服务、后端和前端都部署在服务器上。
+推荐结构：
+```text
+用户浏览器
+  -> Nginx: 80/443
+    -> 前端页面
+    -> /api 转发到 FastAPI: 9000
+FastAPI
+  -> 内网访问 vLLM: 8000
+```
+不建议直接对公网暴露 `8000` 模型服务。更安全的方式是：
+- 公网只开放 `80/443`。
+- `9000` 只由 Nginx 转发访问。
+- `8000` 只允许服务器本机或内网访问。
+如果直接用 IP 和端口访问，需要注意：
+- 后端 `APP_ALLOW_ORIGINS` 要加入前端访问来源。
+- 前端 `VITE_API_BASE_URL` 不能写 `127.0.0.1`，需要写服务器 IP 或域名。
+- 云服务器安全组和防火墙要放行对应端口。
+## 14. 版本维护清单
+每次改动建议记录以下信息：
+| 项目 | 记录内容 |
+| --- | --- |
+| 数据集版本 | 修改了哪个 JSON、增加了多少条问答 |
+| 训练配置 | 使用哪个 yaml、epoch、学习率、LoRA rank |
+| 模型输出目录 | 新 LoRA adapter 保存路径 |
+| 推理参数 | max tokens、temperature、top_p、repetition_penalty |
+| 验证问题 | 至少保留 5 到 10 条固定测试问题 |
+| 已知问题 | 重复、截断、答非所问、接口错误等 |
+
+推荐固定测试问题：
+```text
+施工单位应如何建立安全生产费用管理制度？
+对于未对审查合格的设计图作出详细说明的情况，有哪些相关规定要求？
+在洞口作业防护中，边长为50～150㎝的洞口应如何设置防护？
+你是什么模型？
+给我介绍一下名侦探柯南
+```
+其中前三个用于验证标准问答库和建筑安全法规能力，后两个用于验证身份控制和开放问题生成能力。

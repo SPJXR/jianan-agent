@@ -1,0 +1,71 @@
+{
+ "summary": {
+  "base": "http://127.0.0.1:9001",
+  "tag": "smoke",
+  "date": "2026-09-25 09:34",
+  "n_total": 3,
+  "n_fact": 2,
+  "n_edge": 1,
+  "retrieval_hit3": "2/2",
+  "ctx_block_hit": "2/2",
+  "answer_full_cov": "2/2",
+  "citation_rate": "2/2",
+  "fact_all_ok": "2/2",
+  "refusal_pass": "1/1",
+  "boundary_pass": "0/0",
+  "t_med": 1.04,
+  "t_p95": 1.23
+ },
+ "rows": [
+  {
+   "ret_hit": true,
+   "top3": [
+    "0063",
+    "0064"
+   ],
+   "ctx_cov": 1.0,
+   "ans_cov": 1.0,
+   "citation": true,
+   "miss_kw": [],
+   "id": "DEF-01",
+   "group": "default",
+   "role": "default",
+   "type": "fact",
+   "ok": true,
+   "t": 0.91,
+   "t_first": 0.49,
+   "backend": "llm",
+   "answer": "建筑施工特种作业操作资格考核包括技术理论和操作技能两门科目，两门均通过才算合格。\n\n依据如下：\n1. 考核科目为技术理论和操作技能两门 [1][2]。\n2. 技术理论考核通过后，方可参加操作技能考核 [1][2]。\n3. 两门科目均考核通过的，为考核合格 [1][2]。\n4. 考核大纲由国务院住房城乡建设主管部门制定 [1][2]。"
+  },
+  {
+   "ret_hit": true,
+   "top3": [
+    "0069",
+    "0070"
+   ],
+   "ctx_cov": 1.0,
+   "ans_cov": 1.0,
+   "citation": true,
+   "miss_kw": [],
+   "id": "DEF-04",
+   "group": "default",
+   "role": "default",
+   "type": "fact",
+   "ok": true,
+   "t": 1.23,
+   "t_first": 0.59,
+   "backend": "llm",
+   "answer": "有限空间内氧气浓度合格范围是：不低于19.5%VOL且不高于23.5%VOL。\n\n依据如下：\n- 气体检测报警仪对氧气（O2）的报警值设定为：低于19.5%VOL为缺氧报警，高于23.5%VOL为富氧报警，即合格区间为19.5%VOL至23.5%VOL之间 [11][13]。\n- 有限空间内氧气浓度满足要求，是使用自吸过滤式防毒面具（确需使用时）的前提条件之一 [3][5]。"
+  },
+  {
+   "pass": true,
+   "id": "EDGE-01",
+   "group": "edge",
+   "role": "default",
+   "type": "refusal",
+   "t": 1.04,
+   "t_first": 0.84,
+   "answer": "知识库中未找到与该问题直接相关的条款。建议用户换个问法或查看知识库来源。"
+  }
+ ]
+}

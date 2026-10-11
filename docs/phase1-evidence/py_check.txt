@@ -1,0 +1,5 @@
+﻿default dir exists: True
+contents:
+Include, Lib, Scripts, share, .gitignore, pyvenv.cfg
+--- python binaries root ---
+envs, versions

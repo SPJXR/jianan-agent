@@ -1,0 +1,5 @@
+﻿python_version: 
+pip_version: 
+c_free_gb: 11.8
+node_version: v22.22.2
+--- installed packages ---

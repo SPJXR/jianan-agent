@@ -1,0 +1,202 @@
+{
+ "total": 414,
+ "verbatim_ok": 414,
+ "mismatch": 0,
+ "strict": 201,
+ "no_page": 0,
+ "collapsed_ws": 213,
+ "per_doc": {
+  "0001": {
+   "strict": 8,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0003": {
+   "strict": 0,
+   "no_page": 0,
+   "nows": 3,
+   "fail": 0
+  },
+  "0005": {
+   "strict": 2,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0006": {
+   "strict": 2,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0011": {
+   "strict": 3,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0012": {
+   "strict": 11,
+   "no_page": 0,
+   "nows": 21,
+   "fail": 0
+  },
+  "0017": {
+   "strict": 1,
+   "no_page": 0,
+   "nows": 63,
+   "fail": 0
+  },
+  "0026": {
+   "strict": 0,
+   "no_page": 0,
+   "nows": 2,
+   "fail": 0
+  },
+  "0029": {
+   "strict": 2,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0030": {
+   "strict": 1,
+   "no_page": 0,
+   "nows": 21,
+   "fail": 0
+  },
+  "0048": {
+   "strict": 1,
+   "no_page": 0,
+   "nows": 1,
+   "fail": 0
+  },
+  "0049": {
+   "strict": 0,
+   "no_page": 0,
+   "nows": 1,
+   "fail": 0
+  },
+  "0050": {
+   "strict": 1,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0051": {
+   "strict": 2,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0052": {
+   "strict": 0,
+   "no_page": 0,
+   "nows": 1,
+   "fail": 0
+  },
+  "0053": {
+   "strict": 0,
+   "no_page": 0,
+   "nows": 1,
+   "fail": 0
+  },
+  "0057": {
+   "strict": 15,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0062": {
+   "strict": 0,
+   "no_page": 0,
+   "nows": 5,
+   "fail": 0
+  },
+  "0063": {
+   "strict": 0,
+   "no_page": 0,
+   "nows": 9,
+   "fail": 0
+  },
+  "0064": {
+   "strict": 14,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0065": {
+   "strict": 2,
+   "no_page": 0,
+   "nows": 17,
+   "fail": 0
+  },
+  "0066": {
+   "strict": 0,
+   "no_page": 0,
+   "nows": 2,
+   "fail": 0
+  },
+  "0067": {
+   "strict": 0,
+   "no_page": 0,
+   "nows": 1,
+   "fail": 0
+  },
+  "0068": {
+   "strict": 1,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0069": {
+   "strict": 52,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0070": {
+   "strict": 26,
+   "no_page": 0,
+   "nows": 9,
+   "fail": 0
+  },
+  "0071": {
+   "strict": 10,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0072": {
+   "strict": 4,
+   "no_page": 0,
+   "nows": 1,
+   "fail": 0
+  },
+  "0073": {
+   "strict": 28,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0074": {
+   "strict": 6,
+   "no_page": 0,
+   "nows": 0,
+   "fail": 0
+  },
+  "0075": {
+   "strict": 3,
+   "no_page": 0,
+   "nows": 32,
+   "fail": 0
+  },
+  "0076": {
+   "strict": 6,
+   "no_page": 0,
+   "nows": 23,
+   "fail": 0
+  }
+ }
+}

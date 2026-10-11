@@ -1,0 +1,43 @@
+# 密钥与本地配置（绝不入库）
+.env
+deploy/.env
+*.pem
+*.key
+
+# 虚拟环境与依赖
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 运行时数据：埋点计数与落盘产物（含使用统计，不入库）
+data/
+*.log
+logs/
+
+# 大体积模型权重（混合检索所需 model_int8.onnx 由 tools/quantize_bge_small.py 生成；
+# 缺失时 HYBRID 自动降级为 BM25 单路，不影响可用性）
+models/
+
+# 中间产物与可重建的索引副本
+kb/ocr_imgs/
+kb/tmp_docx/
+kb/*.bak
+kb/kb_r2_base.sqlite
+kb/kb_r2_poc.sqlite
+kb/kb_v51_backup*.sqlite
+kb/_tmp_*.sqlite
+kb/*_log.txt
+kb/server_log*.txt
+
+# 发布包与镜像（另行分发，不入库）
+deploy-pkg/*.tar.gz
+output/
+
+# 编辑器与系统
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

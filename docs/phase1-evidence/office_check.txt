@@ -1,0 +1,13 @@
+﻿WINWORD: NOT_IN_PATH
+wps: NOT_IN_PATH
+et: NOT_IN_PATH
+soffice: NOT_IN_PATH
+True <= C:/Program Files/Microsoft Office/root/Office16/WINWORD.EXE
+False <= C:/Program Files (x86)/Microsoft Office/root/Office16/WINWORD.EXE
+False <= C:/Program Files (x86)/Microsoft Office/Office16/WINWORD.EXE
+False <= C:/Users/30832/AppData/Local/Kingsoft/WPS Office/ksolaunch.exe
+False <= C:/Program Files/LibreOffice/program/soffice.exe
+--- registry Word ---
+Word.Application.16
+--- registry WPS ---
+
