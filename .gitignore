@@ -41,3 +41,8 @@ output/
 *.swp
 .DS_Store
 Thumbs.db
+
+# 冒烟测试每次运行都会重写的调试图，不是交付物（参赛截图在 docs/screenshots/）
+tests/*.png
+# 一次性诊断脚本
+tests/_probe_*.py

@@ -18,8 +18,12 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 BASE = "http://127.0.0.1:9000"
 
 CASES = [
-    # (组, 问题, 预期文档前缀, 期望回答方式)
-    ("C1", "工地上挖坑底下干活有啥危险要注意的？", "0069", "answer"),
+    # (组, 问题, 预期文档前缀（可多解）, 期望回答方式)
+    # C1 接受两份：0069 有限空间作业指南 与 0017 施工人员安全指导手册的
+    # 「（一）土方作业主要有哪些注意事项」。口语题「挖坑底下干活有啥危险」两份都是
+    # 正确出处，命中哪一份都不算检索错误；原先只认 0069 是把一个多解题写死成单解题，
+    # 于是同一份代码在 7/8 与 8/8 之间来回跳（2026-10-11 实测）。
+    ("C1", "工地上挖坑底下干活有啥危险要注意的？", ("0069", "0017"), "answer"),
     ("C3", "震完了房子咋评估谁能去评？", "0011", "answer"),
     ("C4", "密目网着火了怎么办", "0072", "answer"),
     ("B1", "工地食堂需要办理什么证照？", None, "no_answer_or_honest"),
@@ -66,7 +70,8 @@ for tag, q, expect_doc, mode in CASES:
     notice = next((d.get("message", "") for ev, d in frames if ev == "notice"), "")
 
     doc_ids = [s["docId"] for s in sources]
-    hit = any(d.startswith(expect_doc) for d in doc_ids) if expect_doc else None
+    exp = (expect_doc,) if isinstance(expect_doc, str) else (expect_doc or ())
+    hit = any(d.startswith(e) for d in doc_ids for e in exp) if exp else None
     honest_fallback = ("未找到" in answer or "知识" in answer or done.get("backend") == "no_answer"
                        or "仅提供" in answer or "超出" in answer or "无法" in answer
                        or not answer)

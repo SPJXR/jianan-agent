@@ -139,7 +139,18 @@ async def _chat_stream(question: str, history: list = None, role: str = "default
             except Exception:
                 hits2, top2 = [], 0.0
             if top2 > top_cov:
-                hits, top_cov = hits2, top2
+                # 合并两路结果，而不是用改写路整份替换原路。
+                # 改写只多认出一个词就能让整份原结果作废：实测「挖坑底下干活」
+                # 改写成「…危险」时五路全是 0017，把原句已经捞到的 0069 直接丢掉，
+                # 同一道题在 7/8 与 8/8 之间来回跳。并集＋同块取较高分，
+                # 让改写只能加分、不能翻盘。弱命中路径之外不受影响。
+                merged = {h["chunk_id"]: h for h in hits}
+                for h in hits2:
+                    cur = merged.get(h["chunk_id"])
+                    if cur is None or h["score"] > cur["score"]:
+                        merged[h["chunk_id"]] = h
+                hits = sorted(merged.values(), key=lambda h: h["score"], reverse=True)
+                top_cov = max(top_cov, top2)
 
     # ---- 上下文装配（迭代6）：top-8 主证据 + 同文档补位（≤6 条）----
     # 答案块可能排在 9~16 位（同文档表格碎片/邻近条款稀释，2026-09-23 线上反馈：

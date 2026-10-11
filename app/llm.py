@@ -93,7 +93,10 @@ async def rewrite_query(
             {"role": "user", "content": user},
         ],
         "stream": False,
-        "temperature": 0.1,
+        # 查询改写要的是最可能的规范术语串，不是创作，故取贪心解码。
+        # 注意：这只能压低翻转频率，DeepSeek 服务端本身仍非确定（实测同一口语题
+        # 在「危险」/「危险因素」两种改写间仍会跳），所以检索侧不能假设改写稳定。
+        "temperature": 0.0,
         "max_tokens": 100,
     }
     headers = {
