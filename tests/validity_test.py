@@ -138,7 +138,9 @@ class TestDemotionTakesEffect(unittest.TestCase):
             R.DB_PATH = saved
             shutil.rmtree(os.path.dirname(tmp), ignore_errors=True)
         self.assertIn("0070", before, "基线未命中 0070，用例前提不成立")
-        # 降权足够强时，0070 会直接掉出 top-k；这同样算生效（而且是更强的生效形式）
+        # 降权足够强时 0070 会直接掉出 top-k；这算生效，但必须先确认 after 非空，
+        # 否则"检索整体失败返回空表"会让本用例假绿。
+        self.assertTrue(after, "降权后检索返回空结果，属异常而非降权生效")
         self.assertTrue(
             "0070" not in after or after.index("0070") > before.index("0070"),
             f"标为征求意见稿后 0070 未被压后：before={before} after={after}")
