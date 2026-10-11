@@ -29,6 +29,27 @@ uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 .venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 9000
 ```
 
+**要求可复现环境时改用锁定版本**（评审/队员建议用这条，版本与开发环境完全一致）：
+
+```bat
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.lock
+:: 需要跑浏览器 E2E 测试或做离线量化时，再补装开发依赖：
+:: .venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+```
+
+## 一键核验
+
+```bat
+.venv\Scripts\python.exe tools\verify_all.py
+```
+
+把全部**可机器复算的主张**串成一条命令：引用逐字契约、时效降权与鉴权单元用例、14 题检索回归、混合检索零回归、API 契约与各轮冒烟/E2E。结果自动写入 `docs/核验报告.md`（含时间戳与代码版本）。当前状态：**9 PASS / 0 FAIL / 2 SKIPPED**。
+
+只跑不依赖服务的部分：`tools\verify_all.py --offline`。
+
+防假绿规则写在脚本头部：退出码单独不可信（部分脚本恒返回 0），必须再匹配判定行，无判定行记 FAIL 不放行；缺开发依赖记为可操作的 SKIPPED 而非误报产品缺陷；SKIPPED 不等于通过。
+
 ## 配置模型服务（管理员）
 
 复制 `.env.example` 为 `.env`，填入 API Key 后重启：
@@ -106,5 +127,5 @@ Key 仅存于服务端 `.env`，不出现在前端；内置按 IP 限流（默�
 - 0004（施工安全隐患示意图）为扫描图片版，仅少量文字可检索；0002 为空表格模板
 - 0069（试行版）与 0070（征求意见稿）为同一指南的两个版本，来源页已分别标注
 - 34 份文档的时效状态已于 2026-10-11 完成**首批核定**：`effective` 5 份、`trial` 4 份、`consultation` 1 份、`na`（附件表格类）13 份，**仍有 11 份为 `unknown`**，这些在来源页继续显示「时效待确认」徽章。逐条依据与来源链接见 `docs/法规时效核查台账.md`；回填脚本 `tools/backfill_validity.py`（改完须重跑 `tools/build_kb.py`）。已核定为征求意见稿/已废止的文档在检索中乘性降权、不再充当第一依据，但**未核定的 `unknown` 一律不降权**，以免把"还没查"变成"检索变差"（决策与取舍见 docs/decisions/ADR-006）
-- 埋点计数已持久化（`data/track.sqlite`，重启不丢），仍只存「日期+事件名+计数」，不存问题原文与用户身份（见 docs/decisions/ADR-001 增补）；`/api/track/stats` 公网部署前需加鉴权
+- 埋点计数已持久化（`data/track.sqlite`，重启不丢），仍只存「日期+事件名+计数」，不存问题原文与用户身份（见 docs/decisions/ADR-001 增补）；`/api/track/stats` 已加鉴权：配置 `TRACK_STATS_TOKEN` 则校验口令，未配置则仅本机可访问
 - 回答反馈（有帮助/无帮助）存于浏览器本地 `jz_feedback_v1`，可在知识库来源页导出 JSON

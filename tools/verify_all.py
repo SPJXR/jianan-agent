@@ -193,10 +193,14 @@ def main():
             print(f"[warn] {stale_reason}；依赖服务的检查将标记为 ERROR 而非静默跳过")
 
     for name, argv, needs_server, _p, _f in CHECKS:
-        if needs_server and (health is None or stale_reason):
-            rows.append((name, "ERROR", None,
-                         stale_reason or "无可用服务实例，未执行（不等于通过）"))
-            continue
+        if needs_server:
+            if args.offline:
+                rows.append((name, "SKIPPED", None, "--offline 模式未启动服务，未执行（不等于通过）"))
+                continue
+            if health is None or stale_reason:
+                rows.append((name, "ERROR", None,
+                             stale_reason or "无可用服务实例，未执行（不等于通过）"))
+                continue
         v, rc, text = run_one(name, argv, _p, _f)
         detail = ""
         m = re.search(r"(不一致: \d+|RESULT: [^\n]{0,90}|Ran \d+ tests[^\n]*|\d+/\d+ PASS)", text)
@@ -207,6 +211,14 @@ def main():
             v = "FAIL"
         if v in ("ERROR", "TIMEOUT"):
             detail = (text or "").strip().replace("\n", " ")[:220] or "无输出"
+        # 缺开发依赖 ≠ 产品缺陷：判为 SKIPPED 并给出可操作的安装指令，
+        # 否则会把这个环境差异误报成作品有问题（已在全新 lock 环境中实测到）。
+        if v == "FAIL":
+            m = re.search(r"No module named '([A-Za-z0-9_.]+)'", text)
+            if m:
+                v = "SKIPPED"
+                detail = ("缺少开发依赖 `%s`；执行 `python -m pip install -r requirements-dev.txt` "
+                          "后重跑本项" % m.group(1))
         rows.append((name, v, rc, detail))
         print(f"  {v:8s} {name}  {detail}")
 

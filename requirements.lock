@@ -1,0 +1,20 @@
+# 生产运行时依赖锁定（由 .venv 实测版本生成，2026-10-11）
+# 用途：保证评审/队员按此文件安装后行为与开发环境一致。
+# 安装：python -m pip install -r requirements.lock
+# 说明：不含 torch / sentence-transformers —— 向量路走 ONNX int8，无需 torch。
+#       离线量化与 E2E 测试用的额外依赖见 requirements-dev.txt。
+fastapi==0.141.1
+starlette==1.6.0
+uvicorn[standard]==0.53.0
+pydantic==2.13.5
+httpx==0.28.1
+pypdf==6.19.0
+python-docx==1.2.0
+pywin32==312; sys_platform == "win32"
+python-dotenv==1.2.3
+jieba==0.42.1
+pillow==12.3.0
+numpy==2.5.3
+onnxruntime==1.30.0
+transformers==5.17.0
+tokenizers==0.23.2

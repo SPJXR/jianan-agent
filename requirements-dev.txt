@@ -1,0 +1,12 @@
+# 开发/离线工具依赖（生产服务器不需要）
+# 安装：python -m pip install -r requirements-dev.txt
+#
+# 逐项说明为什么生产不需要它们：
+#   playwright            仅用于 tests/iter1_smoke.py、iter2_smoke.py 的浏览器 E2E
+#   sentence-transformers 本地开发回退编码器；线上优先走 ONNX int8 路径
+#   torch                 仅 tools/quantize_bge_small.py 离线量化时用到，量化产物已入库
+#   imageio-ffmpeg        仅用于压制演示视频，与产品运行无关
+playwright==1.63.0
+sentence-transformers==6.0.1
+torch==2.14.0
+imageio-ffmpeg==0.6.0
