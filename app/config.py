@@ -35,6 +35,9 @@ LLM_TEMPERATURE = float(os.environ.get("LLM_TEMPERATURE", "0.2"))
 APP_HOST = os.environ.get("APP_HOST", "127.0.0.1")
 APP_PORT = int(os.environ.get("APP_PORT", "9000"))
 RATE_LIMIT_PER_MIN = int(os.environ.get("RATE_LIMIT_PER_MIN", "20"))
+# 统计端点口令（ADR-001 增补遗留项）：设置后 /api/track/stats 必须带口令；
+# 未设置时仅允许本机回环访问，公网默认关闭而不是默认敞开。
+TRACK_STATS_TOKEN = os.environ.get("TRACK_STATS_TOKEN", "")
 RETRIEVAL_TOP_K = int(os.environ.get("RETRIEVAL_TOP_K", "8"))
 # 检索评分窗口（迭代6，ADR-005 调优）：答案块可能排 9~16 位（同文档表格碎片/
 # 邻近条款稀释，如 0012 附件3 颜色块排 13、0065 一类高层块排 15），仅取窗口内

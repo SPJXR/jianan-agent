@@ -7,6 +7,7 @@
 - 落盘失败时自动退回纯内存计数，绝不影响问答主链路。
 """
 import collections
+import hmac
 import os
 import re
 import sqlite3
@@ -15,6 +16,8 @@ import time
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+
+from . import config
 
 router = APIRouter(prefix="/api/track")
 
@@ -159,8 +162,23 @@ async def track(request: Request):
 
 
 @router.get("/stats")
-async def track_stats(history: int = 0):
-    """当日计数；history=1 时附带最近 30 天的逐日汇总（仍只有事件名与计数）。"""
+async def track_stats(request: Request, history: int = 0):
+    """事件计数。鉴权策略（ADR-001 增补遗留项）：
+
+    - 配置了 TRACK_STATS_TOKEN → 必须带 `?token=` 或请求头 `X-Track-Token`，用常数时间比较；
+    - 未配置口令 → **仅允许本机回环**（127.0.0.1 / ::1），公网默认关闭而非默认敞开。
+      本项目由 uvicorn 直接对外服务、无反代改写 client.host，故该判断可靠；
+      若日后加上 Nginx 等反向代理，必须改为强制配置口令，否则所有请求都会被误认为本机。
+    """
+    ip = request.client.host if request.client else ""
+    token = config.TRACK_STATS_TOKEN
+    if token:
+        given = request.query_params.get("token") or request.headers.get("x-track-token") or ""
+        if not hmac.compare_digest(given, token):
+            return JSONResponse({"error": {"code": "forbidden", "message": "无权查看统计"}}, status_code=403)
+    elif ip not in ("127.0.0.1", "::1", "localhost"):
+        return JSONResponse({"error": {"code": "forbidden", "message": "统计端点仅限本机访问，或配置 TRACK_STATS_TOKEN"}},
+                            status_code=403)
     _rollover()
     out = {"day": _counts_day, "counts": dict(sorted(_counts.items())), "persistent": _db_ok}
     if history:

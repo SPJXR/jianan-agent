@@ -49,9 +49,20 @@ r = httpx.get(f"{BASE}/api/sources")
 d = r.json()
 d0 = d["docs"][0]
 has_cols = "valid_status" in d0 and "version_date" in d0
-all_unknown = all(doc.get("valid_status") in ("unknown", None, "") for doc in d["docs"])
+# 时效状态已于 2026-10-11 首批核定（见 docs/法规时效核查台账.md）。
+# 原断言「缺省全部为待确认」描述的是回填前的状态，现改为校验取值词表合法与核定进度。
+VALID_STATUSES = {"effective", "trial", "consultation", "repealed", "na", "unknown"}
+statuses = {(doc.get("valid_status") or "unknown") for doc in d["docs"]}
+n_unverified = sum(1 for doc in d["docs"]
+                   if (doc.get("valid_status") or "unknown") == "unknown")
+n_consultation = sum(1 for doc in d["docs"]
+                     if doc.get("valid_status") == "consultation")
 check("V1 /api/sources 含 valid_status/version_date", has_cols, str(sorted(d0.keys())))
-check("V1 缺省全部为待确认(unknown)", all_unknown)
+check("V1 valid_status 取值均在词表内", statuses <= VALID_STATUSES,
+      str(sorted(statuses - VALID_STATUSES)))
+check("V1 时效核定已启动（unknown 少于全部文档）", 0 <= n_unverified < len(d["docs"]),
+      f"{n_unverified}/{len(d['docs'])} 待确认")
+check("V1 征求意见稿已标出", n_consultation == 1, f"consultation={n_consultation}")
 
 # ---- 3. chunks 逐字契约回归（重建后哈希与快照一致）----
 snap = json.load(open(ROOT / "tests" / "chunks_snapshot.json", encoding="utf-8"))

@@ -488,11 +488,14 @@ function clauseOf(s) {
 }
 
 // 时效徽章（引用卡片与知识库来源抽屉共用同一套口径）
+// 词表区分"试行"（已印发、现行有效）与"征求意见稿"（尚未生效），二者效力相反。
 function validityBadge(vs) {
   return {
     effective: `<span class="badge badge-ok">现行有效</span>`,
+    trial: `<span class="badge badge-ok">试行·现行有效</span>`,
+    consultation: `<span class="badge badge-danger">征求意见稿·未生效</span>`,
     repealed: `<span class="badge badge-danger">已废止</span>`,
-    draft: `<span class="badge badge-warn">试行/征求意见稿</span>`,
+    na: `<span class="badge badge-muted">附件·无独立时效</span>`,
   }[(vs || "unknown")] || `<span class="badge badge-muted">时效待确认</span>`;
 }
 
