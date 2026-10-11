@@ -8,6 +8,7 @@ import io
 import json
 import sqlite3
 import sys
+import time
 from pathlib import Path
 
 import httpx
@@ -32,7 +33,9 @@ check("T7 超 20 条 400", r.status_code == 400, str(r.status_code))
 r = httpx.post(f"{BASE}/api/track", json={"events": [{"event": "EVIL NAME!", "x": 1}]})
 check("T7 非法事件名 400", r.status_code == 400, str(r.status_code))
 
-marker = "iter2_api_test_evt"
+# 计数自 2026-10-11 起持久化（ADR-001 增补），固定事件名会跨次运行累加。
+# 因此用带时间戳的唯一事件名，断言"本次上报的 2 条被计入"，而非"全局计数等于 2"。
+marker = "iter2_api_evt_%s" % time.strftime("%H%M%S")
 r = httpx.post(f"{BASE}/api/track", json={"events": [
     {"event": marker, "ts": 1758362400000, "device": "desktop", "page_version": "v2", "chars": 12},
     {"event": marker, "nested": {"drop": "me"}, "keep": 1.5, "flag": True},

@@ -105,10 +105,23 @@ with sync_playwright() as p:
     check("F7 刷新后当前会话恢复", page.locator(".msg-ai").count() == 1)
 
     # AC-V2-1 时效徽章
+    # 原断言写死「34 份全部待确认」，那是时效核定前的状态；核定后待确认数会随台账推进而减少。
+    # 改为与 /api/sources 的数据层交叉核对：界面"时效待确认"数必须等于数据层 unknown 数。
     page.click("#sourceBtn")
     page.wait_for_selector(".doc-row", timeout=15000)
     n_badge = page.locator(".badge-muted", has_text="时效待确认").count()
-    check("V2 来源页显示时效徽章（34 份缺省待确认）", n_badge == 34, f"n={n_badge}")
+    n_rows = page.locator(".doc-row").count()
+    try:
+        import httpx
+        api_unknown = sum(1 for doc in httpx.get(f"{BASE}/api/sources", timeout=15).json()["docs"]
+                          if (doc.get("valid_status") or "unknown") == "unknown")
+    except Exception as exc:
+        api_unknown = None
+        check("V2 可读取 /api/sources 作为基准", False, repr(exc))
+    check("V2 来源页列出全部 34 份文档", n_rows == 34, f"rows={n_rows}")
+    check("V2 界面待确认徽章数与数据层 unknown 数一致",
+          api_unknown is not None and n_badge == api_unknown,
+          f"界面={n_badge} 数据层={api_unknown}")
 
     # AC-F8-3 导出入口（有反馈时可见）
     exp = page.locator("#exportFeedbackBtn")

@@ -1,0 +1,84 @@
+{
+ "generated_at": "2026-10-11 22:54:40",
+ "git_head": "2df7f2d",
+ "summary": {
+  "pass": 9,
+  "fail": 0,
+  "skipped": 2
+ },
+ "meta": {
+  "verbatim": "414/414 逐字命中，不一致 0",
+  "strict": 201,
+  "collapsed": 213,
+  "chunks": "414 片段，chunks_hash 2e65efd1315806ff…",
+  "health": "{\"status\": \"ok\", \"llmConfigured\": true, \"llmModel\": \"deepseek-chat\", \"docs\": 34, \"chunks\": 414, \"hybrid\": {\"hybrid\": true, \"ok\": true, \"backend\": \"onnx-int8\", \"n_chunks\": 414, \"err\": null}}"
+ },
+ "checks": [
+  {
+   "name": "引用逐字契约（片段 vs 源文本逐字比对）",
+   "verdict": "PASS",
+   "exit": 0,
+   "detail": "不一致: 0"
+  },
+  {
+   "name": "时效降权与鉴权单元用例（unittest）",
+   "verdict": "PASS",
+   "exit": 0,
+   "detail": "Ran 16 tests in 0.256s"
+  },
+  {
+   "name": "库内题检索回归（14 题阈值）",
+   "verdict": "PASS",
+   "exit": 0,
+   "detail": "RESULT: PASS — 全部 14 道库内题通过阈值"
+  },
+  {
+   "name": "混合检索零回归（HYBRID on/off 对比）",
+   "verdict": "PASS",
+   "exit": 0,
+   "detail": "9/9 PASS"
+  },
+  {
+   "name": "迭代2 API 契约（时效列/逐字快照/chat 事件序列）",
+   "verdict": "PASS",
+   "exit": 0,
+   "detail": "RESULT: 15/15 PASS"
+  },
+  {
+   "name": "迭代1 冒烟（SSE 事件序列与降级）",
+   "verdict": "PASS",
+   "exit": 0,
+   "detail": "RESULT: 11/11 PASS"
+  },
+  {
+   "name": "迭代2 冒烟（多轮/历史/限流）",
+   "verdict": "PASS",
+   "exit": 0,
+   "detail": "RESULT: 22/22 PASS"
+  },
+  {
+   "name": "迭代3 口语改写（两阶段检索）",
+   "verdict": "PASS",
+   "exit": 0,
+   "detail": "RESULT: 8/8 PASS"
+  },
+  {
+   "name": "迭代5 角色化（契约不变性 15 项）",
+   "verdict": "PASS",
+   "exit": 0,
+   "detail": "RESULT: PASS — 全部 15 项通过"
+  },
+  {
+   "name": "线上实例全量验收（online_v3_test）",
+   "verdict": "SKIPPED",
+   "exit": null,
+   "detail": "目标为公网实例 http://8.137.11.193:9000；本次核验环境无法访问该地址，**未验证不等于通过**。需在能访问公网实例的环境下单独执行。"
+  },
+  {
+   "name": "早期接口查看脚本（api_test）",
+   "verdict": "SKIPPED",
+   "exit": null,
+   "detail": "该脚本为 CASE 1-4 的原始 print 输出、**没有判定行**，无法机器判定通过与否。其断言已被「迭代2 API 契约」覆盖，故不计入本报告的通过/失败统计；需要人工查看原始响应时单独运行。"
+  }
+ ]
+}
