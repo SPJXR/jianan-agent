@@ -84,19 +84,38 @@ Key 仅存于服务端 `.env`，不出现在前端；内置按 IP 限流（默�
 │   ├── style.css           # 工程蓝图设计语言（docs/UIUX.md）
 │   ├── favicon.svg         # 工程蓝图蓝安全帽图标
 │   └── app.js              # SSE 渲染 / 引用 chip / 来源卡片 / 埋点 SDK / 回答反馈
-├── tools/                  # 知识库构建流水线
+├── tools/                  # 知识库构建与核验流水线
 │   ├── extract_docs.py     # .doc→Word COM 转 docx、.docx/.pdf 解析
 │   ├── ocr_image.ps1       # Windows.Media.Ocr 中文 OCR（扫描件）
 │   ├── ocr_scans.py        # 0003/0004/0067 扫描图 OCR
-│   ├── build_kb.py         # 条款感知分块 + FTS5 索引
-│   └── verify_verbatim.py  # 引用逐字契约校验（414 片段 0 不一致，可重跑）
+│   ├── build_kb.py         # 表格感知分块 + FTS5 索引
+│   ├── build_vec_index.py  # 条款向量索引（bge-small-zh-v1.5）
+│   ├── quantize_bge_small.py # fp32→int8 离线量化（95.8MB→23MB，纯 CPU 推理）
+│   ├── backfill_validity.py # 34 份文档时效核定 → docs_meta.json + 核查台账
+│   ├── verify_verbatim.py  # 引用逐字契约校验（414 片段 0 不一致，可重跑）
+│   ├── verify_all.py       # 一键总校验，自动生成 docs/核验报告.md
+│   ├── trial_report.py     # 试用数据汇总与交叉校验（区分埋点/自报/交叉）
+│   ├── make_shots.py       # 参赛截图自动拍摄（本机 Edge）
+│   └── check_mobile.py     # 390×844 移动端适配实测（溢出/触控目标/字号）
 ├── kb/
-│   ├── docs_meta.json      # 34 份文档人工核定标题/分类/状态
+│   ├── docs_meta.json      # 34 份文档人工核定标题/分类/时效状态
 │   ├── text/               # 抽取出的纯文本（引用溯源的数据源）
 │   └── kb.sqlite           # 检索索引（414 个条款片段）
 ├── knowledge_base/docs/    # 原始 34 份文档
-├── docs/                   # PRD 与 UI/UX 设计文档
-├── tests/                  # 接口测试 / 检索回归 / mock LLM
+├── docs/                   # 产品与设计文档、验收记录
+│   ├── PRD.md / UIUX.md / SPEC-ITER*.md
+│   ├── ACCEPTANCE.md       # 分轮次验收记录（带日期，不回填改写）
+│   ├── 技术架构与测试说明.md  # 参赛材料 C2
+│   ├── 原创性与第三方资源清单.md # 参赛材料 C3
+│   ├── 核验报告.md          # 由 verify_all.py 自动生成，勿手改
+│   ├── 法规时效核查台账.md   # 由 backfill_validity.py 自动生成，勿手改
+│   ├── decisions/          # ADR-001~007 技术决策与否决记录
+│   ├── eval/               # 评测集与结果（含 labelsSource 标记）
+│   ├── research/           # 论文精读与 POC 记录
+│   └── screenshots/        # 参赛截图 10 张（含移动端实拍）
+├── tests/                  # 接口测试 / 检索回归 / 冒烟与 E2E / mock LLM
+├── requirements.lock       # 15 项运行时依赖锁定版本（复现环境用这个）
+├── requirements-dev.txt    # 测试与离线量化依赖（生产不需要）
 ├── .env.example            # 配置模板
 └── start.bat               # 一键启动
 ```
@@ -126,6 +145,6 @@ Key 仅存于服务端 `.env`，不出现在前端；内置按 IP 限流（默�
 
 - 0004（施工安全隐患示意图）为扫描图片版，仅少量文字可检索；0002 为空表格模板
 - 0069（试行版）与 0070（征求意见稿）为同一指南的两个版本，来源页已分别标注
-- 34 份文档的时效状态已于 2026-10-11 完成**首批核定**：`effective` 5 份、`trial` 4 份、`consultation` 1 份、`na`（附件表格类）13 份，**仍有 11 份为 `unknown`**，这些在来源页继续显示「时效待确认」徽章。逐条依据与来源链接见 `docs/法规时效核查台账.md`；回填脚本 `tools/backfill_validity.py`（改完须重跑 `tools/build_kb.py`）。已核定为征求意见稿/已废止的文档在检索中乘性降权、不再充当第一依据，但**未核定的 `unknown` 一律不降权**，以免把"还没查"变成"检索变差"（决策与取舍见 docs/decisions/ADR-006）
+- 34 份文档的时效状态分两批核定（首批 2026-10-11、第二批 2026-10-12）：`effective` 8 份、`trial` 4 份、`consultation` 1 份、`na`（附件/表格/示例/讲话/指导读物类）20 份，**仅剩 1 份 `unknown`（0001 涉企行政检查事项清单）**。0001 是**故意保持未定**的：公开渠道取不到母文件文号，且本地版写"房地产开发企业监督检查（3项）"而 2025-10 地方转引版同条已作"（7项）"，清单随年度动态更新、本地版很可能已过时——这种情况必须继续显示「时效待确认」徽章，不能为了台账好看标成现行有效。逐条依据、来源链接与核查批次见 `docs/法规时效核查台账.md`；回填脚本 `tools/backfill_validity.py`（改完须重跑 `tools/build_kb.py`，元数据重建不改片段内容，`chunks_hash` 保持 `2e65efd1315806ff…` 不变）。**第二批的依据是转发件与第三方法规库，尚未逐份回发文机关官网比对原件，台账中已单列「需人工复核」**。已核定为征求意见稿/已废止的文档在检索中乘性降权、不再充当第一依据，但**未核定的 `unknown` 一律不降权**，以免把"还没查"变成"检索变差"（决策与取舍见 docs/decisions/ADR-006）
 - 埋点计数已持久化（`data/track.sqlite`，重启不丢），仍只存「日期+事件名+计数」，不存问题原文与用户身份（见 docs/decisions/ADR-001 增补）；`/api/track/stats` 已加鉴权：配置 `TRACK_STATS_TOKEN` 则校验口令，未配置则仅本机可访问
 - 回答反馈（有帮助/无帮助）存于浏览器本地 `jz_feedback_v1`，可在知识库来源页导出 JSON
