@@ -170,8 +170,16 @@ def search(question: str, k: int = 8, context_query: str = ""):
         # 错的块」从 15~30 位拉回窗口内；整句命中仍按纯正文（严格口径，
         # 防止锚点+正文拼出假整句）。
         cov_bare = _bare((h.get("anchor") or "") + h["text"])
-        # 覆盖率只按当前问题的词统计（上下文词仅用于扩召回，不得计入）
-        covered = sum(1 for t in q_terms if _bare(t) in cov_bare)
+        # 覆盖率只按当前问题的词统计（上下文词仅用于扩召回，不得计入）。
+        # 命中词包含去重（2026-10-14 口语题「挖坑底下干活」线上复现）：
+        # 目录页「土方作业主要有哪些注意事项」会让 注意/事项/注意事项 三个词
+        # 在同一处文本重复计数 3 次，把 coverage 恰好顶到 REWRITE_MIN_COVERAGE
+        # 边界，卡死改写救援。同一处命中里短词 ⊂ 长词时只按最长词计 1 次。
+        matched = [t for t in q_terms if _bare(t) in cov_bare]
+        covered = sum(
+            1 for t in matched
+            if not any(t != u and t in u for u in matched)
+        )
         coverage = covered / n_terms
         r = h.get("rank")
         if r is None:
