@@ -11,7 +11,7 @@ import sys
 from playwright.sync_api import sync_playwright
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-CHROME = r"C:/Users/30832/AppData/Local/ms-playwright/chromium-1234/chrome-win64/chrome.exe"
+CHROME = r"C:/Users/30832/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe"
 BASE = "http://127.0.0.1:9000"
 
 results = []
