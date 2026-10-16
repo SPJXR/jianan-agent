@@ -64,4 +64,9 @@ NO_ANSWER_TEXT = "知识库中未找到与该问题直接相关的条款。"
 
 
 def llm_configured() -> bool:
+    # LLM_DISABLED=1：显式降级开关（演示/测试用）。
+    # Windows cmd 无法创建"存在但为空"的环境变量（set VAR= 是删除），
+    # 双击 bat 想强制降级时无法用空 LLM_API_KEY 实现，故用此开关。
+    if os.environ.get("LLM_DISABLED", "") == "1":
+        return False
     return bool(LLM_API_KEY)
