@@ -1,0 +1,7 @@
+# Windows 批处理必须是 CRLF 行尾。
+# 本机 core.autocrlf=true 会在检出时转成 CRLF，但那是**按机器配置**的：
+# 换到 macOS/Linux 检出（或有人 git clone 后打包）就会得到 LF 行尾的 .bat，
+# 而 cmd 解析 LF 批处理会跳错标签、静默退出——现象正是"双击后窗口一闪就没了"。
+# 2026-10-19 交付包里那个 LF 行尾的 start_demo_degraded.bat 就是这么来的。
+*.bat text eol=crlf
+*.cmd text eol=crlf

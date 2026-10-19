@@ -16,15 +16,18 @@
 start.bat
 ```
 
-首次运行会自动：创建虚拟环境 → 安装依赖 → 解析 34 份文档并构建检索索引（约 2-5 分钟）→ 启动服务并打开浏览器。
+首次运行会自动：创建虚拟环境 → 按 `requirements.lock` 安装依赖 → 启动服务，并在 6 秒后打开浏览器。
+（若分发包内已含 `kb/kb.sqlite`，则**不会**重建索引；只有索引缺失时才会去解析文档，那一步需要本机装有 MS Word。）
+
+失败时脚本会**停下来打印原因并等待按键**，完整安装输出写入 `install_log.txt`。
 
 - 访问地址：http://127.0.0.1:9000
-- 手动分步执行：
+- 手动分步执行（不依赖 `uv`，任何装了 Python 3.9+ 的机器都可用）：
 
 ```bat
-uv venv .venv --python 3.14
-uv pip install --python .venv\Scripts\python.exe -r requirements.txt
-.venv\Scripts\python.exe tools\extract_docs.py   :: 解析文档（.doc 需要 MS Word，扫描件走 Windows OCR）
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.lock
+.venv\Scripts\python.exe tools\extract_docs.py   :: 仅索引缺失时需要（.doc 要 MS Word，扫描件走 Windows OCR）
 .venv\Scripts\python.exe tools\build_kb.py       :: 分块 + 建 SQLite FTS5 索引
 .venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 9000
 ```
