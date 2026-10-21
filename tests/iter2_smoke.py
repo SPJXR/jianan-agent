@@ -6,12 +6,15 @@
 """
 import io
 import json
+import os
 import sys
 
 from playwright.sync_api import sync_playwright
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-CHROME = r"C:/Users/30832/AppData/Local/ms-playwright/chromium-1243/chrome-win64/chrome.exe"
+# 浏览器可执行文件：默认交给 playwright 自己解析；需要指定时设环境变量 JIANAN_CHROME。
+# 这里原先写死了开发者本机的绝对路径，换一台机器就必然启动失败（2026-10-21 异机核验实测）。
+CHROME = os.environ.get("JIANAN_CHROME", "")
 BASE = "http://127.0.0.1:9000"
 
 results = []
@@ -22,7 +25,10 @@ def check(name, ok, detail=""):
     print(("PASS " if ok else "FAIL ") + name + ("  | " + detail if detail else ""))
 
 with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True, executable_path=CHROME)
+    _launch_kw = {"headless": True}
+    if CHROME and os.path.exists(CHROME):
+        _launch_kw["executable_path"] = CHROME
+    browser = p.chromium.launch(**_launch_kw)
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
 

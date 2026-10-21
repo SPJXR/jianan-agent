@@ -4,7 +4,7 @@ import sys, io, os, json
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 from pathlib import Path
 
-DOCS = Path(r"C:/Users/30832/WorkBuddy/2026-09-19-17-37-04/knowledge_base/docs")
+DOCS = ROOT / "knowledge_base/docs"
 result = {}
 
 # ---- 1. pypdf: 全部 6 份 PDF 提取 ----
@@ -33,6 +33,7 @@ for pdf_file in sorted(DOCS.glob("*.pdf")):
 
 # ---- 2. python-docx: 抽查 2 份 docx ----
 from docx import Document
+ROOT = Path(__file__).resolve().parent.parent   # 仓库根：不写死任何人的本机路径
 for docx_file in [DOCS / "0002_28e4f67b-d262-4020-bd50-142ef860bcee.docx",
                   DOCS / "0070_88ABAF4D94E6EE16C6F5CF1C5C4E1CC4.docx"]:
     info = {}
@@ -59,6 +60,6 @@ except Exception as e:
     info["error"] = f"{type(e).__name__}: {str(e)[:150]}"
 result[doc_file.name] = info
 
-out = Path(r"C:/Users/30832/WorkBuddy/2026-09-19-17-37-04/phase1_pdf_docx_test.json")
+out = ROOT / "phase1_pdf_docx_test.json"
 out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
 print("WROTE", out)

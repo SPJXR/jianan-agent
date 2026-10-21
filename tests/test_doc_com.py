@@ -4,8 +4,8 @@ import sys, io, os, json
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 from pathlib import Path
 
-DOCS = Path(r"C:/Users/30832/WorkBuddy/2026-09-19-17-37-04/knowledge_base/docs")
-CONVERT_DIR = Path(r"C:/Users/30832/WorkBuddy/2026-09-19-17-37-04/tests/converted")
+DOCS = ROOT / "knowledge_base/docs"
+CONVERT_DIR = ROOT / "tests/converted"
 CONVERT_DIR.mkdir(parents=True, exist_ok=True)
 
 targets = [
@@ -16,6 +16,7 @@ targets = [
 
 import pythoncom
 from win32com import client as win32_client
+ROOT = Path(__file__).resolve().parent.parent   # 仓库根：不写死任何人的本机路径
 
 result = {}
 pythoncom.CoInitialize()
@@ -59,6 +60,6 @@ try:
 finally:
     pythoncom.CoUninitialize()
 
-out = Path(r"C:/Users/30832/WorkBuddy/2026-09-19-17-37-04/phase1_doc_com_test.json")
+out = ROOT / "phase1_doc_com_test.json"
 out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
 print("WROTE", out)

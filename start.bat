@@ -47,7 +47,9 @@ echo       dependencies OK >> "%OUT%"
 
 echo [4/5] Checking knowledge index ...
 if not exist kb\kb.sqlite (
-  echo       building index, 2-5 min, needs MS Word installed ...
+  echo       building index - only when kb\kb.sqlite is missing from the package ...
+  echo       this path needs MS Word installed and takes 2-5 min; the delivered
+  echo       package ships a prebuilt index, so you should NOT see this line.
   .venv\Scripts\python.exe tools\extract_docs.py >> "%OUT%" 2>&1
   if errorlevel 1 goto :kbfail
   .venv\Scripts\python.exe tools\build_kb.py >> "%OUT%" 2>&1

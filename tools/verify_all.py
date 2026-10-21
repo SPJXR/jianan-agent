@@ -224,6 +224,14 @@ def main():
                 v = "SKIPPED"
                 detail = ("缺少开发依赖 `%s`；执行 `python -m pip install -r requirements-dev.txt` "
                           "后重跑本项" % m.group(1))
+        # 未配模型 Key 同样不等于产品缺陷：迭代3「口语改写」要求 LLM 可用，
+        # app/main.py 的判断是 `... and config.llm_configured()`，无 Key 时改写分支根本不进入，
+        # 口语题必然打不中预期文档。2026-10-21 异机核验在无 Key 环境实测到 RESULT: 3/8 PASS，
+        # 且每例先打印"管理员尚未配置模型服务"。按 SKIPPED 记并写清恢复条件，不记成 FAIL。
+        if v == "FAIL" and ("管理员尚未配置模型服务" in text or "llm_configured" in text):
+            v = "SKIPPED"
+            detail = ("本项需要可用的模型服务（.env 里的 LLM_API_KEY）：未配置时系统按设计不进入"
+                      "口语改写分支，必然不命中预期文档。配上任意 OpenAI 兼容 Key 后重跑本项。")
         rows.append((name, v, rc, detail))
         print(f"  {v:8s} {name}  {detail}")
 
