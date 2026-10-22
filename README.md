@@ -113,7 +113,7 @@ Key 仅存于服务端 `.env`，不出现在前端；内置按 IP 限流（默�
 │   ├── 核验报告.md          # 由 verify_all.py 自动生成，勿手改
 │   ├── 法规时效核查台账.md   # 由 backfill_validity.py 自动生成，勿手改
 │   ├── decisions/          # ADR-001~007 技术决策与否决记录
-│   ├── eval/               # 评测集与结果（含 labelsSource 标记）
+│   ├── eval/               # 评测集与结果（题目初稿 AI 起草、学生逐题筛选定稿；无分类标记字段）
 │   ├── research/           # 论文精读与 POC 记录
 │   └── screenshots/        # 参赛截图 10 张（含移动端实拍）
 ├── tests/                  # 接口测试 / 检索回归 / 冒烟与 E2E / mock LLM
