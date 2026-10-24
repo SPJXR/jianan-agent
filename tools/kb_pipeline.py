@@ -62,6 +62,11 @@ def main():
 
     if not args.skip_extract:
         run_step("解析文档", ["tools/extract_docs.py"])  # .doc 需本机 MS Word，扫描件走 Windows OCR
+        # OCR 覆写步骤必须紧跟 extract（顺序坑固化，2026-10-24 两次踩坑）：
+        # extract 会把 0067/0003/0080 的文本覆盖回空壳/乱码（OCR 来源文档无可用文本层），
+        # 漏跑这一步 = 这些文档从索引里静默消失（A9 回归就是这样发生的）。
+        run_step("OCR 覆写（0067/0003/0080）", ["tools/ocr_scans.py"])
+        run_step("OCR 覆写（0080 切片拼贴）", ["tools/ocr_0080.py"])
     run_step("建库分块", ["tools/build_kb.py"])
     if not args.skip_vector:
         run_step("向量索引", ["tools/build_vec_index.py", "bge-small-zh-v1.5"])

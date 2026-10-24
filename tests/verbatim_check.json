@@ -1,17 +1,11 @@
 {
- "total": 498,
- "verbatim_ok": 498,
+ "total": 509,
+ "verbatim_ok": 509,
  "mismatch": 0,
- "strict": 285,
+ "strict": 277,
  "no_page": 0,
- "collapsed_ws": 213,
+ "collapsed_ws": 232,
  "per_doc": {
-  "0001": {
-   "strict": 8,
-   "no_page": 0,
-   "nows": 0,
-   "fail": 0
-  },
   "0003": {
    "strict": 0,
    "no_page": 0,
@@ -214,6 +208,12 @@
    "strict": 75,
    "no_page": 0,
    "nows": 0,
+   "fail": 0
+  },
+  "0080": {
+   "strict": 0,
+   "no_page": 0,
+   "nows": 19,
    "fail": 0
   }
  }

@@ -1,0 +1,23 @@
+页数: 19
+  p1: OCR 1329 字 | 0080_p1.png (tiles=8)
+  p2: OCR 1368 字 | 0080_p2.png (tiles=8)
+  p3: OCR 307 字 | 0080_p3.png (tiles=8)
+  p4: OCR 482 字 | 0080_p4.png (tiles=6)
+  p5: OCR 1123 字 | 0080_p5.png (tiles=8)
+  p6: OCR 1069 字 | 0080_p6.png (tiles=8)
+  p7: OCR 1072 字 | 0080_p7.png (tiles=8)
+  p8: OCR 1267 字 | 0080_p8.png (tiles=8)
+  p9: OCR 1211 字 | 0080_p9.png (tiles=8)
+  p10: OCR 1140 字 | 0080_p10.png (tiles=8)
+  p11: OCR 1076 字 | 0080_p11.png (tiles=8)
+  p12: OCR 1257 字 | 0080_p12.png (tiles=8)
+  p13: OCR 1281 字 | 0080_p13.png (tiles=8)
+  p14: OCR 862 字 | 0080_p14.png (tiles=8)
+  p15: OCR 926 字 | 0080_p15.png (tiles=8)
+  p16: OCR 1074 字 | 0080_p16.png (tiles=8)
+  p17: OCR 1006 字 | 0080_p17.png (tiles=8)
+  p18: OCR 1191 字 | 0080_p18.png (tiles=8)
+  p19: OCR 653 字 | 0080_p19.png (tiles=8)
+合计 19694 字 → D:\wdagent\2026-09-19-17-37-04\kb\text\0080.txt
+预览: 【第1页】
+﻿为 适 应 国 际 技 术 法 规 与 技 术 标 准 通 行 规 则 ， 2016 年 以 来 ， 住 房 和 城 乡 建 设 部 陆 续 印 发 《 深 化 工 程 建 设 标 准 化 工 作 改 革 的 意 见 》 等 文 件 ， 提 出 政 府 制 定 强 制 性 标 准 、 社 会 团 体 制 定 自 愿 采 用 性 标 准 的 长 远 目 标 ， 明 确 了 逐 步 用 
