@@ -48,16 +48,19 @@ def hit_groups(text: str, groups) -> set:
     return {i for i, g in enumerate(groups) if any(norm(w) in t for w in g)}
 
 
-def ask(base: str, question: str, role: str, timeout: float) -> dict:
-    """POST /api/chat 并解析 SSE（事件类型在 event: 行，勿从 JSON 里找，0923 经验）。"""
+def ask(base: str, question: str, role: str, timeout: float, history=None) -> dict:
+    """POST /api/chat 并解析 SSE（事件类型在 event: 行，勿从 JSON 里找，0923 经验）。
+    history：多轮评测组（--set eval_set_mt.json）的题面历史，None 时不发该字段。"""
     import httpx
     client = httpx.Client(trust_env=False, timeout=timeout)  # 绕开系统代理（本机 502 坑）
     t0 = time.time()
     t_first = None
     buf = ""
+    body = {"question": question, "role": role}
+    if history:
+        body["history"] = history
     try:
-        with client.stream("POST", base.rstrip("/") + "/api/chat",
-                            json={"question": question, "role": role}) as r:
+        with client.stream("POST", base.rstrip("/") + "/api/chat", json=body) as r:
             if r.status_code != 200:
                 return {"http": r.status_code, "t_total": round(time.time() - t0, 2)}
             for chunk in r.iter_text():
@@ -95,6 +98,11 @@ def score_fact(q: dict, res: dict) -> dict:
     exp = set(q["expected_docs"])
     groups = q.get("keywords") or []
     top3 = {s["docId"] for s in res["sources"][:3]}
+    # ctx_hit（路线图 B-1）：预期文档是否真正进入 LLM 上下文（sources = top-8 主证据
+    # + 同文档补位，即服务端的 context_hits）。ret_hit 只看 top-3；二者组合可区分
+    # 「检索没召回」（ret_hit=N, ctx_hit=N）与「召回了但被截断/排位靠后」
+    # （ret_hit=N, ctx_hit=Y），让「未找到」类失败归因更准。
+    all_docs = {s["docId"] for s in res["sources"]}
     ctx = set()
     for s in res["sources"]:
         ctx |= hit_groups(s.get("full", ""), groups)
@@ -103,6 +111,7 @@ def score_fact(q: dict, res: dict) -> dict:
     miss = [" / ".join(groups[i]) for i in sorted(set(range(len(groups))) - ans)]
     return {
         "ret_hit": bool(top3 & exp),
+        "ctx_hit": bool(all_docs & exp),
         "top3": sorted(top3),
         "ctx_cov": round(len(ctx) / n, 2),
         "ans_cov": round(len(ans) / n, 2),
@@ -121,7 +130,9 @@ def score_edge(q: dict, res: dict) -> dict:
 
 
 def run(args):
-    spec = json.load(open(EVAL_SET, encoding="utf-8"))
+    eval_set = args.set if args.set else os.path.basename(EVAL_SET)
+    spec = json.load(open(os.path.join(BASE_DIR, "docs", "eval", eval_set),
+                          encoding="utf-8"))
     qs = spec["questions"]
     if args.ids:
         want = {x.strip().upper() for x in args.ids.split(",")}
@@ -133,7 +144,8 @@ def run(args):
     rows, t_costs = [], []
     for i, q in enumerate(qs, 1):
         try:
-            res = ask(args.base, q["question"], q.get("role", "default"), args.timeout)
+            res = ask(args.base, q["question"], q.get("role", "default"),
+                      args.timeout, history=q.get("history"))
         except Exception as e:
             res = {"http": 0, "err": f"{type(e).__name__}: {str(e)[:120]}"}
         if res.get("http") != 200:
@@ -159,6 +171,7 @@ def run(args):
         rows.append(sc)
         if q["type"] == "fact":
             print(f"  [{i:2}/{len(qs)}] {q['id']:<7} ret={'Y' if sc['ret_hit'] else 'N'} "
+                  f"ctxH={'Y' if sc['ctx_hit'] else 'N'} "
                   f"ctx={sc['ctx_cov']:.0%} ans={sc['ans_cov']:.0%} cite={'Y' if sc['citation'] else 'N'} "
                   f"{'OK' if sc['ok'] else 'MISS ' + ','.join(sc['miss_kw'][:3])} ({sc['t']}s)")
         else:
@@ -170,6 +183,7 @@ def run(args):
     refus = [r for r in edges if r["type"] == "refusal"]
     bounds = [r for r in edges if r["type"] == "boundary"]
     ret_hits = [r for r in facts if r.get("ret_hit")]
+    ctx_hits = [r for r in facts if r.get("ctx_hit")]
     full_ans = [r for r in facts if r.get("ans_cov", 0) >= 0.999]
     full_ok = [r for r in facts if r.get("ok")]
     cite_ok = [r for r in facts if r.get("citation")]
@@ -182,6 +196,7 @@ def run(args):
         "base": args.base, "tag": args.tag, "date": time.strftime("%Y-%m-%d %H:%M"),
         "n_total": len(rows), "n_fact": len(facts), "n_edge": len(edges),
         "retrieval_hit3": f"{len(ret_hits)}/{len(facts)}",
+        "ctx_hit": f"{len(ctx_hits)}/{len(facts)}",
         "ctx_block_hit": f"{len(ctx_full)}/{len(facts)}",
         "answer_full_cov": f"{len(full_ans)}/{len(facts)}",
         "citation_rate": f"{len(cite_ok)}/{len(facts)}",
@@ -209,6 +224,8 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", required=True, help="服务地址，如 http://127.0.0.1:9001")
     ap.add_argument("--tag", default="run", help="报告标识，如 local / online-v5")
+    ap.add_argument("--set", default="", dest="set",
+                    help="评测集文件名（docs/eval/ 下，如 eval_set_mt.json 多轮组）；默认 62 题主集")
     ap.add_argument("--ids", default="", help="只跑指定题，逗号分隔")
     ap.add_argument("--limit", type=int, default=0, help="只跑前 N 题")
     ap.add_argument("--timeout", type=float, default=120.0)
@@ -216,7 +233,7 @@ if __name__ == "__main__":
     args = ap.parse_args()
     if args.sleep > 0:
         _ask_orig = ask
-        def ask(b, q, r, t):  # noqa: F811
+        def ask(b, q, r, t, history=None):  # noqa: F811
             time.sleep(args.sleep)
-            return _ask_orig(b, q, r, t)
+            return _ask_orig(b, q, r, t, history=history)
     sys.exit(run(args))

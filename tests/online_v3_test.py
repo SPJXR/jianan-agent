@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""线上 v3 部署验收：对 http://8.137.11.193:9000 跑测试问题集核心题。
+"""线上 v3 部署验收：对目标线上实例跑测试问题集核心题。
 
 覆盖：
 - A 组 10 题（核心场景）：SSE 正常、sources 命中预期文档、回答非空
@@ -7,16 +7,21 @@
 - B 组 2 题抽查（兜底诚实）：不编造
 - 埋点联动：测试后 GET /api/track/stats 计数应增长
 
-运行：env -u PYTHONHOME -u PYTHONPATH .venv/Scripts/python.exe tests/online_v3_test.py
+运行（目标地址用环境变量指定，默认为现行公网实例）：
+    set JIANAN_EVAL_BASE=http://47.109.98.111:9000
+    env -u PYTHONHOME -u PYTHONPATH .venv/Scripts/python.exe tests/online_v3_test.py
+历史坑（2026-10-22 核验报告在案）：BASE 曾写死 8.137.11.193，实例迁移后该脚本
+必然测错对象。此后目标地址只允许环境变量覆盖，不再跟随实例迁移手工改代码。
 """
 import io
 import json
+import os
 import sys
 
 import httpx
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-BASE = "http://8.137.11.193:9000"
+BASE = os.environ.get("JIANAN_EVAL_BASE", "http://47.109.98.111:9000")
 TIMEOUT = 120
 
 CASES = [

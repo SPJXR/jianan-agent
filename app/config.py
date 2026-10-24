@@ -44,6 +44,11 @@ RETRIEVAL_TOP_K = int(os.environ.get("RETRIEVAL_TOP_K", "8"))
 # 与 top-8 主证据同文档的块补进上下文。POC 窗口扫描：15/16/18 均恢复 PM-06，
 # 16 较 15 留 1 位缓冲（hybrid 向量融合可能带来 ±1~2 位排名漂移），18 无额外收益。
 RECALL_WINDOW = int(os.environ.get("RECALL_WINDOW", "16"))
+# 覆盖率权重（B-1 参数化；2026-10-24 网格定标 docs/eval/网格搜索-20261024.md：
+# W{1.5~3}×窗口{12~20} 网格已饱和，现值 2.0/16 确认最优维持不动，W=3.0 因拒答回归排除）
+COVERAGE_WEIGHT = float(os.environ.get("COVERAGE_WEIGHT", "2.0"))
+# 口语同义映射（ADR-008）：命中词只扩召回、不进覆盖率分母；词表 kb/synonyms.json
+SYNONYMS = os.environ.get("SYNONYMS", "1") == "1"
 MIN_COVERAGE = float(os.environ.get("MIN_COVERAGE", "0.25"))  # 低于此相关度走"未找到"兜底
 # 低于此相关度视为弱命中，触发「口语 -> 法规术语」LLM 改写后二次检索（两阶段检索）
 REWRITE_MIN_COVERAGE = float(os.environ.get("REWRITE_MIN_COVERAGE", "0.5"))

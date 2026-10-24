@@ -7,7 +7,7 @@ from functools import lru_cache
 
 import jieba
 
-from . import config
+from . import config, synonyms
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(BASE, "kb", "kb.sqlite")
@@ -106,9 +106,16 @@ def search(question: str, k: int = 8, context_query: str = ""):
 
     context_query：多轮场景的上下文补充（F6 上一问）。仅用于扩大召回面，
     覆盖率只按 question 自身的词计算——避免上一问的词稀释相关度导致误兜底
-    （2026-09-21 线上 A4/A9 反馈根因）。"""
+    （2026-09-21 线上 A4/A9 反馈根因）。
+
+    口语同义映射（ADR-008）：SYNONYMS=1 时把命中的映射目标词追加进召回面
+    （与 context_query 同一纪律：只扩召回，不进覆盖率分母）。"""
     recall_text = _norm(question + " " + context_query) if context_query else _norm(question)
     terms = list(_terms_cached(recall_text))          # 召回词（含上下文）
+    if config.SYNONYMS:
+        for t in synonyms.expand(question):
+            if t not in terms:
+                terms.append(t)
     q_terms = list(_terms_cached(_norm(question)))    # 相关度词（仅当前问题）
     if not q_terms:
         q_terms = terms
@@ -188,7 +195,7 @@ def search(question: str, k: int = 8, context_query: str = ""):
             bonus = abs(r) / max_rank
         else:
             bonus = 1.0
-        score = coverage * 2.0 + bonus
+        score = coverage * config.COVERAGE_WEIGHT + bonus
         qbare = _bare(question)
         if len(qbare) >= 6 and qbare in bare:  # 整句命中强加权
             score += 2.0

@@ -1,0 +1,33 @@
+# Caddyfile — 建安法规问答助手 HTTPS 反向代理（B-3）
+# 适用：Caddy for Windows（https://caddy.community/download），放 C:\caddy\
+# Linux 上同样适用（systemd 单元 caddy 自带）。
+#
+# 前置：域名 <域名> 的 A 记录已解析到本服务器公网 IP；安全组放行 80/443。
+# 启动：C:\caddy\caddy.exe run --config C:\caddy\Caddyfile
+# 常驻：NSSM 注册为 Windows 服务，或 sc create caddy binPath= "C:\caddy\caddy.exe run --config C:\caddy\Caddyfile"
+#
+# 开启后建议：安全组收掉 9000 公网入方向（只留本机回环），公网流量统一走 443。
+
+<域名> {
+	encode gzip
+
+	# SSE 流式响应：关缓冲（与 uvicorn 侧 X-Accel-Buffering: no 双保险）
+	reverse_proxy 127.0.0.1:9000 {
+		flush_interval -1
+	}
+
+	# 静态前端走应用自带挂载，无需额外配置；此处仅加基础安全头
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		Strict-Transport-Security "max-age=31536000"
+	}
+
+	log {
+		output file C:\caddy\access.log {
+			roll_size 50MiB
+			roll_keep 8
+		}
+	}
+}

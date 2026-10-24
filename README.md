@@ -123,6 +123,18 @@ Key 仅存于服务端 `.env`，不出现在前端；内置按 IP 限流（默�
 └── start.bat               # 一键启动
 ```
 
+## 降级模式与演示（A-2）
+
+三种方式让应用在**无可用模型服务**时仍可运行/演示：
+
+| 方式 | 效果 |
+|------|------|
+| 不配置 `.env` 的 `LLM_API_KEY` | 检索原文降级展示（提示"管理员尚未配置模型服务"） |
+| 环境变量 `LLM_DISABLED=1` | 显式降级开关——已配 Key 也能强制走降级（Windows cmd 无法设空变量，故用此开关） |
+| 双击 `start_demo_degraded.bat` | 一键启动降级演示实例（自带开关与提示横幅） |
+
+降级行为：正常问题直接逐字展示命中条款原文（相关度低时截断并警示"请勿作为依据"）；库外问题仍走"未找到"诚实兜底，不会因为降级而编造。
+
 ## 接口
 
 | 接口 | 说明 |
@@ -135,14 +147,39 @@ Key 仅存于服务端 `.env`，不出现在前端；内置按 IP 限流（默�
 | `POST /api/track` | 埋点上报（sendBeacon，白名单清洗，仅存事件名计数，不存属性明细/问题原文） |
 | `GET /api/track/stats` | 事件计数（持久化于 `data/track.sqlite`，重启不丢；`?history=1` 返回最近 30 天逐日汇总） |
 
-## 知识库更新
+## 检索与评测工具链（B 档）
 
-替换/新增 `knowledge_base/docs/` 文档后，按 doc 编号在 `kb/docs_meta.json` 登记标题与分类，重跑：
+| 工具 | 说明 |
+|------|------|
+| `tools/run_eval.py` | 62 题全量评测；含 **ctx_hit 判据**（预期文档是否真正进入 LLM 上下文，区分「没召回」vs「召回了被截断」）；`--set eval_set_mt.json` 跑多轮指代组 |
+| `tools/grid_search.py` | 覆盖率权重 × 召回窗口网格定标（2026-10-24 结论：网格已饱和，现值 2.0/16 确认最优，见 `docs/eval/网格搜索-20261024.md`） |
+| `tools/temp_ablation.py` | 生成温度消融（同代码 4 温度 × 62 题，结论见 ADR-009） |
+| `tools/kb_pipeline.py` | 知识库扩充一键流水线：解析 → 建库 → 向量索引 → 护栏回归（→ 可选 62 题全量） |
+| `kb/synonyms.json` | 口语→法规术语召回映射（ADR-008）：只扩召回不进覆盖率分母，`SYNONYMS=0` 可关 |
+
+口语同义映射与多轮指代改写上线后，弱命中题可省一次 LLM 改写调用；改写链路（ADR-007 只加分不翻盘）保持不变。
+
+## 开发护栏（pre-commit）
 
 ```bat
-.venv\Scripts\python.exe tools\extract_docs.py
-.venv\Scripts\python.exe tools\build_kb.py
+git config core.hooksPath .githooks
 ```
+
+一次性安装后，每次提交自动跑 14 题检索回归（约 20 秒，离线不调 LLM），防止检索层改动无护栏上线。应急绕过：`git commit --no-verify`（须在提交信息里说明理由）。
+
+## 服务器运维（B-3）
+
+`deploy/` 目录提供 Windows 服务器（与部署手册 v5.2 一致）的运维工件：每日备份（kb.sqlite + 向量索引，保留 7 份）、日志轮转（>50MB 归档）、Caddy HTTPS 反代配置，安装步骤见 `deploy/README-ops.md`。
+
+## 知识库更新
+
+替换/新增 `knowledge_base/docs/` 文档后，按 doc 编号在 `kb/docs_meta.json` 登记标题、分类与时效状态，然后跑一键流水线（解析 → 建库 → 向量索引 → 护栏，一步到位）：
+
+```bat
+.venv\Scripts\python.exe tools\kb_pipeline.py
+```
+
+或分步执行 `tools\extract_docs.py` → `tools\build_kb.py` → `tools\build_vec_index.py bge-small-zh-v1.5`。
 
 ## 已知边界
 

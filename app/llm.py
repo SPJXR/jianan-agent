@@ -77,14 +77,26 @@ async def rewrite_query(
         "着火/容易烧 -> 阻燃 防火；塔吊 -> 建筑起重机械；挖坑底下干活/井下作业 -> 有限空间作业 或 基坑作业；"
         "考证 -> 考核发证；密目网 -> 密目式安全网。\n"
         "2. 保留用户原意与对象，不得引入问题之外的新主题、不得臆造条款。\n"
-        "3. 如果问题本身就是规范术语，原样输出即可。\n"
-        "4. 只输出一行查询词，不超过 40 字；不要回答问题，不要解释，不要标点结尾。"
+        "3. 当前问题含指代（那/它/第X条/上述/前面提到/某项）时，必须结合对话历史把指代解析为明确对象，"
+        "输出完整独立的查询（如「那检测的频次」且历史在谈有限空间 -> 有限空间作业 气体检测 频次）；"
+        "历史与当前问题无关时忽略历史。\n"
+        "4. 如果问题本身就是规范术语，原样输出即可。\n"
+        "5. 只输出一行查询词，不超过 40 字；不要回答问题，不要解释，不要标点结尾。"
     )
+    # 多轮改写（B-2，2026-10-24）：旧版只带上一问，指代类追问（那第三条呢）无法解析。
+    # 现带最近 2 个用户问题 + 最后一条助手回答摘录（150 字；_clean_history 已保证 ≤500）。
     user = question
     if history:
-        prev = [h["content"] for h in history if h.get("role") == "user"]
-        if prev:
-            user = f"（对话上一问：{prev[-1][:100]}）\n当前问题：{question}"
+        prev_qs = [h["content"] for h in history if h.get("role") == "user"][-2:]
+        last_a = next((h["content"][:150] for h in reversed(history)
+                       if h.get("role") == "assistant"), "")
+        parts = []
+        for i, pq in enumerate(prev_qs, 1):
+            parts.append(f"对话用户问{i}：{pq[:100]}")
+        if last_a:
+            parts.append(f"助手上一答（摘录）：{last_a}")
+        parts.append(f"当前问题：{question}")
+        user = "\n".join(parts)
 
     payload = {
         "model": config.LLM_MODEL,

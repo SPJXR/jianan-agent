@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "name": "多轮指代评测组（B-2）",
+    "version": "mt-v1",
+    "date": "2026-10-24",
+    "purpose": "路线图 B-2「多轮改写利用」：检验弱命中改写路对指代类追问（那/它/第X条）的解析。与 62 题主评测集（eval_set_v2.json）相互独立，不改变主集口径与分母。",
+    "usage": "由 tools/run_eval.py --set eval_set_mt.json 消费（需该工具支持 history 字段与 --set 参数）",
+    "grounding": "关键词组均以 kb/text/ 原文核对（2026-10-24）：MT-01→0069「每隔30min如实记录/中断超30min重新通风检测」；MT-02→0063「60周岁每年体检1次」；MT-03→0071「不予通过/重大事故隐患」；MT-04→0066「消防设计文件」；MT-05→0072「冷弯工艺」",
+    "labels": "题目文本由 AI 起草、参赛学生逐题筛选修订定稿，与主评测集同口径，不设 AI/人工分类标记"
+  },
+  "questions": [
+    {
+      "id": "MT-01", "group": "mt", "role": "default", "type": "fact",
+      "history": [
+        {"role": "user", "content": "有限空间作业前需要检测哪些气体？"},
+        {"role": "assistant", "content": "有限空间作业前应检测氧含量、可燃气体（沼气/甲烷）以及硫化氢等有毒有害气体；经通风后气体检测结果仍不合格的，不得进入有限空间内作业。"}
+      ],
+      "question": "那检测的频次有什么要求？",
+      "expected_docs": ["0069", "0070"],
+      "clause": "0069 4.6 作业与检测",
+      "key_points": ["作业期间每隔 30min 如实记录一次过程检测结果", "作业中断超过 30min 再次进入前应重新通风和检测"],
+      "keywords": [["30min", "30 分钟"], ["重新", "再次进入"]]
+    },
+    {
+      "id": "MT-02", "group": "mt", "role": "default", "type": "fact",
+      "history": [
+        {"role": "user", "content": "建筑施工特种作业人员如何取得资格证书？"},
+        {"role": "assistant", "content": "建筑施工特种作业人员应当依法参加专门的安全作业培训并考核合格，取得建筑施工特种作业操作资格证书后方可上岗。"}
+      ],
+      "question": "年龄上限是多少？超了怎么办？",
+      "expected_docs": ["0063", "0064"],
+      "clause": "0063 第二十四条 体检要求",
+      "key_points": ["年龄超过 60 周岁每年体检 1 次并提交体检报告", "未按规定体检的不予延期"],
+      "keywords": [["60", "六十"], ["体检"]]
+    },
+    {
+      "id": "MT-03", "group": "mt", "role": "default", "type": "fact",
+      "history": [
+        {"role": "user", "content": "专项施工方案有哪些严重缺陷会被判定为重大事故隐患？"},
+        {"role": "assistant", "content": "无工程及周边环境情况描述、无施工风险辨识与风险管控措施、无施工安全保证措施等通用条款缺陷，以及各分项工程的严重缺陷情形，会被判定为重大事故隐患。"}
+      ],
+      "question": "审核的时候发现这些缺陷怎么处理？",
+      "expected_docs": ["0071"],
+      "clause": "0071 判定规则",
+      "key_points": ["方案存在严重缺陷的，审核、审查和专家论证应不予通过", "实施环节存在严重缺陷的判定为重大事故隐患"],
+      "keywords": [["不予通过"], ["重大事故隐患"]]
+    },
+    {
+      "id": "MT-04", "group": "mt", "role": "default", "type": "fact",
+      "history": [
+        {"role": "user", "content": "建设项目开工“一件事”需要提交哪些材料？"},
+        {"role": "assistant", "content": "建筑工程施工许可需要用地批准手续、建设工程规划许可证、施工条件说明、确定施工企业的材料等；多数材料可共享获取。"}
+      ],
+      "question": "消防设计审查那项要交什么文件？",
+      "expected_docs": ["0066"],
+      "clause": "0066 材料清单-消防设计审查",
+      "key_points": ["建设工程消防设计审查需提交消防设计文件"],
+      "keywords": [["消防设计文件"]]
+    },
+    {
+      "id": "MT-05", "group": "mt", "role": "default", "type": "fact",
+      "history": [
+        {"role": "user", "content": "哪些施工工艺是禁止使用的？"},
+        {"role": "assistant", "content": "禁止使用的施工工艺包括钢筋“热弯”加工工艺、石材及瓷板落后挂接工艺等。"}
+      ],
+      "question": "钢筋那个有什么替代做法？",
+      "expected_docs": ["0072"],
+      "clause": "0072 禁止使用技术-1",
+      "key_points": ["钢筋热弯的替代工艺为冷弯工艺（一次弯折到位）"],
+      "keywords": [["冷弯"]]
+    },
+    {
+      "id": "MT-06", "group": "mt", "role": "default", "type": "refusal",
+      "history": [
+        {"role": "user", "content": "有限空间作业前需要检测哪些气体？"},
+        {"role": "assistant", "content": "有限空间作业前应检测氧含量、可燃气体以及有毒有害气体。"}
+      ],
+      "question": "美国OSHA对有限空间是怎么规定的？",
+      "expected_docs": [],
+      "clause": "库外题：多轮上下文中的知识边界",
+      "key_points": ["应明确说明知识库未收录，不得编造"],
+      "keywords": []
+    }
+  ]
+}

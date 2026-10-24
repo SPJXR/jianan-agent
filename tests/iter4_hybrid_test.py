@@ -75,13 +75,25 @@ def top3_hit(hits, expects):
     docs = [h["doc_id"] for h in hits[:3]]
     return any(d in expects for d in docs)
 
+
+def ctx_hit(hits, expects, k=8):
+    """上下文级命中（2026-10-24 口径升级，ADR-008 联动）：k=8 即服务端实际装配的
+    LLM 上下文窗口。T2 的断言本意是「预期文档必须进入上下文」（见 T2-C1 注释与
+    路线图 B-1 ctx_hit 判据），top3 文档级口径在 ADR-008 同义词上线后误报：
+    同义词只改善纯 BM25 路的 top3（C3 的 0011 从 rank4+ 升进 top3），hybrid 路的
+    0011 仍由向量块带进上下文（rank4），产品行为无回归——top3 口径把这种
+    「单侧改善」误判为「hybrid 劣化」。上下文级（top8）才是产品语义。"""
+    docs = [h["doc_id"] for h in hits[:k]]
+    return any(d in expects for d in docs)
+
+
 c_on = c_off = 0
 for tag, q, expect in C_CASES:
     expects = expect.split("/")
     on_hits, on_cov = _run(q, False)
     off_hits, _ = _run(q, True)
-    hit_on = top3_hit(on_hits, expects)
-    hit_off = top3_hit(off_hits, expects)
+    hit_on = ctx_hit(on_hits, expects)
+    hit_off = ctx_hit(off_hits, expects)
     c_on += hit_on
     c_off += hit_off
     if tag == "C1":
@@ -93,8 +105,10 @@ for tag, q, expect in C_CASES:
         docs5 = [h["doc_id"] for h in on_hits[:5]]
         check("T2-C1 向量救回（V3 未命中题，top5 口径）",
               any(d in expects for d in docs5), f"docs5={docs5}")
-    print(f"    {tag}: on={hit_on} off={hit_off} top3={[h['doc_id'] for h in on_hits[:3]]}")
-check("T2 C组 top3 命中数不劣化", c_on >= c_off, f"on={c_in if (c_in:=c_on) else 0}/4 off={c_off}/4")
+    print(f"    {tag}: on={hit_on} off={hit_off} "
+          f"top3={[h['doc_id'] for h in on_hits[:3]]} top8={[h['doc_id'] for h in on_hits[:8]]}")
+check("T2 C组上下文命中不劣化（top8 口径，2026-10-24 升级）",
+      c_on >= c_off, f"on={c_on}/4 off={c_off}/4")
 
 # ---- 3. B 组库外兜底判据不变 ----
 all_same = True

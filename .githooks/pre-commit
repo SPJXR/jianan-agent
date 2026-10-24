@@ -1,0 +1,30 @@
+#!/bin/sh
+# pre-commit 护栏（路线图 B-3）：检索层改动无护栏上线的最后防线。
+# 跑 tests/qa_regression.py（14 题库内阈值回归，离线、约 20 秒、不调 LLM）。
+# 退出码与 RESULT 判定行双保险（防假绿纪律：单一信号不可信）。
+#
+# 安装（一次性）：git config core.hooksPath .githooks
+# 绕过（应急，须在提交信息里说明原因）：git commit --no-verify
+
+PY="${JIANAN_PY:-.venv/Scripts/python.exe}"
+if [ ! -f "$PY" ]; then
+  PY=python
+fi
+
+LOG="$(mktemp 2>/dev/null || echo /tmp/precommit_qa_$$.log)"
+echo "[pre-commit] 检索回归 14 题（约 20 秒）..."
+"$PY" tests/qa_regression.py > "$LOG" 2>&1
+code=$?
+tail -n 3 "$LOG"
+
+if [ $code -ne 0 ] || ! grep -q "RESULT: PASS" "$LOG"; then
+  echo ""
+  echo "[pre-commit] FAIL：qa_regression 未通过（exit=$code），提交被拒绝。"
+  echo "  完整输出：$LOG"
+  echo "  修复后重新 git commit；应急可 --no-verify（请在提交信息中说明理由）。"
+  rm -f "$LOG"
+  exit 1
+fi
+rm -f "$LOG"
+echo "[pre-commit] PASS"
+exit 0

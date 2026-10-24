@@ -429,3 +429,55 @@ python tools\verify_verbatim.py
 
 `python tools/verify_all.py` → **9 PASS / 0 FAIL / 2 SKIPPED**（代码版本见 `docs/核验报告.md` 头部）。两处 SKIPPED 均非本轮引入：公网实例在本环境不可达、早期 `api_test` 脚本无判定行。
 
+
+# 2026-10-24｜路线图 B 档执行（赛后短期迭代）
+
+执行依据：《项目优化路线图-20261016.md》B 档四组事项；开工登记与免做核对见
+`docs/decisions/OPEN-DECISIONS.md` 2026-10-24 条目。本节为逐项验收记录。
+
+## B-3 工程与运维
+
+| 项 | 结果 | 证据 |
+|---|---|---|
+| 限流分端点 | ✅ **核对免做**——实测 `/api/sources` 连发 30 次全 200、`/api/chat` 第 21 次 429；现行代码本就只对 chat 限流（track 另有独立限流器），路线图描述与代码现状不符 | 本机 curl/httpx 实测（2026-10-24） |
+| chromium 路径可移植 | ✅ **核对免做**——git 57abbdc + 2e244aa 已修（`JIANAN_CHROME` 环境变量），本次复核在案 | git log |
+| online_v3_test BASE | ✅ 已改读 `JIANAN_EVAL_BASE` 环境变量（默认现行实例），verify_all SKIPPED 说明同步更新 | `tests/online_v3_test.py` 头部 |
+| pre-commit 护栏 | ✅ `.githooks/pre-commit`（qa14 双保险判定：退出码 + RESULT 行）；安装 `git config core.hooksPath .githooks` | 手动执行 PASS，本次提交为首跑 |
+| 备份/日志轮转/HTTPS | ✅ `deploy/` 交付 Windows 服务器工件（路线图原文的 systemd/rsync/journald 与实际 Windows 环境不符，按等价物实现）：每日备份保留 7 份、日志 >50MB 轮转、Caddyfile；安装手册 `deploy/README-ops.md` | 工件 + 文档（服务器侧安装属运维动作） |
+
+## B-1 检索层
+
+| 项 | 结果 | 证据 |
+|---|---|---|
+| ctx_hit 评测判据 | ✅ `run_eval.py` 新增 ctx_hit（预期文档进入 LLM 上下文），与 ret_hit 组合可区分「没召回」vs「召回了被截断」；首跑（temp=0.2）55/55 | `docs/eval/results/eval_temp-02_20261024.json` |
+| GOV-07 词面零重叠 | ✅ **登记关闭**——A-1 报告证实连续两次全量通过（归因 ADR-007），开发项不再立项 | OPEN-DECISIONS 2026-10-24 决议 |
+| 重排权重网格搜索 | ✅ `tools/grid_search.py`：W{1.5~3}×窗口{12~20}，事实题 ret3/ctx_hit 全组合持平、kw 差异 ≤0.005 为噪声级——**现值 2.0/16 确认最优维持**；W=3.0 因 EDGE-03 拒答回归排除 | `docs/eval/网格搜索-20261024.md` |
+| 口语同义映射表 | ✅ ADR-008：`kb/synonyms.json`（13 键）+ `app/synonyms.py`，只扩召回不进覆盖率分母；单元 6/6；三重护栏见下 | ADR-008 + `tests/synonyms_test.py` |
+
+**三重护栏（B-1 改动 = synonyms 接线 + COVERAGE_WEIGHT 参数化）**：
+qa14（14/14 PASS）→ iter4（9/9 PASS，T2 口径升级为上下文级 top8，升级理由在测试内注释：
+同义词只改善纯 BM25 路的 top3，hybrid 路预期文档仍进上下文，top3 口径把「单侧改善」
+误判为「hybrid 劣化」）→ 62 题全量（temp=0.2 组：ret3 54/55、ctx_hit 55/55、
+ans 53/55、cite 55/55、fact_all_ok 52/55——不劣于同日改动前基线 51/55）。
+
+## B-2 生成层
+
+| 项 | 结果 | 证据 |
+|---|---|---|
+| 温度消融 | ✅ 4 温度 × 62 题干净完成（backends 全 llm，无降级混入）：**0.2 全指标最优或并列最优，维持**；「低温更稳」假设不成立 | ADR-009 + `eval_temp-*_20261024.json` |
+| 多轮改写利用 | ✅ ADR-010：改写提示词带 2 用户问 + 1 助手答摘录 + 指代解析规则；新增 6 题多轮评测组（关键词逐条对照语料）——首跑 **5/5 事实题全绿 + 拒答 1/1** | ADR-010 + `eval_mt-v1_20261024.json` |
+
+消融执行注记：首跑（上午）temp 0.1~0.3 组遭 DeepSeek 服务端故障串污染（37+124 题降级
+混入），凭 backends 分布校验识别后作废重跑——该防呆已写入 `tools/temp_ablation.py`。
+
+## B-4 知识库运营
+
+| 项 | 结果 | 证据 |
+|---|---|---|
+| 扩充一键流水线 | ✅ `tools/kb_pipeline.py`：登记自检 → 解析 → 建库 → 向量索引 → 护栏；验证执行确认**重建确定性**（chunks_hash 逐字节一致 2bdd333640902073，414 片段） | 本节执行记录 |
+| 0001 涉企清单处置 | ⏸ OPEN——行政动作待用户决策（询问函留证 or 下架记录理由），登记于 OPEN-DECISIONS | OPEN-DECISIONS 表 2026-10-24 行 |
+
+## 本轮总校验
+
+`python tools/verify_all.py`（2026-10-24，含 B 档全部改动）：**9 PASS / 0 FAIL / 2 SKIPPED**
+（SKIPPED 两项与基线相同：线上实例需公网环境、早期 api_test 无判定行，理由见核验报告）。
