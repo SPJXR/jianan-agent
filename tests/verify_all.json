@@ -1,17 +1,17 @@
 {
- "generated_at": "2026-10-24 16:23:29",
- "git_head": "3f04557",
+ "generated_at": "2026-10-24 18:01:54",
+ "git_head": "d35eff8",
  "summary": {
   "pass": 9,
   "fail": 0,
   "skipped": 2
  },
  "meta": {
-  "verbatim": "414/414 逐字命中，不一致 0",
-  "strict": 201,
+  "verbatim": "498/498 逐字命中，不一致 0",
+  "strict": 285,
   "collapsed": 213,
-  "chunks": "414 片段，chunks_hash 2e65efd1315806ff…",
-  "health": "{\"status\": \"ok\", \"llmConfigured\": true, \"llmModel\": \"deepseek-chat\", \"docs\": 34, \"chunks\": 414, \"hybrid\": {\"hybrid\": true, \"ok\": true, \"backend\": \"onnx-int8\", \"n_chunks\": 414, \"err\": null}}"
+  "chunks": "498 片段，chunks_hash d949e76cbd70e630…",
+  "health": "{\"status\": \"ok\", \"llmConfigured\": true, \"llmModel\": \"deepseek-chat\", \"docs\": 37, \"chunks\": 498, \"hybrid\": {\"hybrid\": true, \"ok\": true, \"backend\": \"onnx-int8\", \"n_chunks\": 498, \"err\": null}}"
  },
  "checks": [
   {
@@ -24,7 +24,7 @@
    "name": "时效降权与鉴权单元用例（unittest）",
    "verdict": "PASS",
    "exit": 0,
-   "detail": "Ran 16 tests in 0.217s"
+   "detail": "Ran 16 tests in 0.232s"
   },
   {
    "name": "库内题检索回归（14 题阈值）",

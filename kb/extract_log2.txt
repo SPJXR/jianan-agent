@@ -1,0 +1,37 @@
+[0001] ok       chars=   5182 title=中华人民共和国城市房地产管理法
+[0002] low_text chars=     39 title=0002_28e4f67b-d262-4020-bd50-142ef860bcee
+[0003] low_text chars=      0 title=0003_3acdec36-bd9f-4c08-99bf-4e025d866986
+[0004] low_text chars=     45 title=0004_6f4ef704726bdea17f1f4979746e9faa
+[0005] ok       chars=    862 title=0005_W020210126100808
+[0006] ok       chars=    825 title=历史文化街区划定和历史建筑确定标准
+[0011] ok       chars=   1618 title=国家地震应急预案
+[0012] ok       chars=  22429 title=震后房屋建筑安全应急评估技术指南
+[0017] ok       chars=   6248 title=安全指导手册
+[0026] ok       chars=    845 title=检 查 情 况 | 本辖区是否按照规定频次开展检查 | 本辖区是否按照规定频次开展检查 | （是  否  ）
+[0029] ok       chars=    967 title=合法合规 | 合法合规 | 建筑符合有关规划建设要求，建房占地和建筑面积符合当地相关规定，手续齐备。
+[0030] ok       chars=  22302 title=0030_W020140812042050
+[0048] ok       chars=    909 title=太阳能光电建筑应用集中示范区实施方案编制大纲
+[0049] ok       chars=    762 title=0049_W020111229053446
+[0050] ok       chars=    696 title=太阳能光电建筑一体化应用示范项目实施方案编制大纲
+[0051] ok       chars=    767 title=太阳能光电建筑应用一体化示范项目实施方案编制大纲
+[0052] ok       chars=    667 title=0052_P020110130602642181690
+[0053] ok       chars=    307 title=0053_P020110110552447099674
+[0057] ok       chars=   8461 title=0057_P020100428614238439975
+[0062] ok       chars=   2314 title=建筑施工特种作业人员安全技术考核培训教材
+[0063] ok       chars=   5647 title=中华人民共和国建筑法
+[0064] ok       chars=   6223 title=中华人民共和国建筑法
+[0065] ok       chars=  13898 title=0065_32455D7A4165BD09BFB49E5DF734FCC9
+[0066] ok       chars=   1095 title=法定代表人授权书
+[0067] low_text chars=     24 title=建设项目开工“一件事”办理流程
+[0068] ok       chars=    464 title=建设项目开工“一件事”数据服务清单
+[0069] ok       chars=  22513 title=及施工安全作业指南（试行）
+[0070] ok       chars=  19996 title=中华人民共和国安全生产法
+[0071] ok       chars=   3597 title=危险性较大的分部分项工程专项施工方案
+[0072] ok       chars=   2662 title=房屋建筑和市政基础设施工程禁止和限制使用技术目录（第二批）
+[0073] ok       chars=  14352 title=房屋市政工程施工安全监督人员培训考核大纲
+[0074] ok       chars=   3377 title=电子证照 共享服务接口规范
+[0075] ok       chars=  20362 title=标准化工作导则 第1部分：标准化文件的结构和起草规则
+[0076] ok       chars=  16613 title=标准化工作导则 第1部分：标准化文件的结构和起草规则
+[0079] ok       chars=  35513 title=有限空间作业安全指导手册
+
+done: 31/35 ok, meta -> D:\wdagent\2026-09-19-17-37-04\kb\extract_meta.json

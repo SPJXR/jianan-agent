@@ -124,7 +124,18 @@ with sync_playwright() as p:
     except Exception as exc:
         api_unknown = None
         check("V2 可读取 /api/sources 作为基准", False, repr(exc))
-    check("V2 来源页列出全部 34 份文档", n_rows == 34, f"rows={n_rows}")
+    # 2026-10-24 口径修订：文档数不再写死 34（知识库扩充后 37），改为与
+    # kb/docs_meta.json 登记数交叉核对——来源页必须列出登记的全部文档。
+    import json as _json
+    from pathlib import Path as _Path
+    try:
+        n_meta = len(_json.load(open(
+            _Path(__file__).resolve().parent.parent / "kb" / "docs_meta.json",
+            encoding="utf-8"))["docs"])
+    except Exception:
+        n_meta = None
+    check("V2 来源页列出登记的全部文档", n_meta is not None and n_rows == n_meta,
+          f"rows={n_rows} meta={n_meta}")
     check("V2 界面待确认徽章数与数据层 unknown 数一致",
           api_unknown is not None and n_badge == api_unknown,
           f"界面={n_badge} 数据层={api_unknown}")

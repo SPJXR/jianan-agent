@@ -212,11 +212,23 @@ def search(question: str, k: int = 8, context_query: str = ""):
     # 覆盖率 0）会占满 top-k 名额，把真正相关的块挤出候选集（2026-09-21 C3 复现）。
     scored = [s for s in scored if s[1] >= 0.2]  # 命中词太少视为弱相关
     scored.sort(key=lambda x: (-x[0], -x[1]))
+    # 文档多样性上限（2026-10-24 知识库扩充回归修复）：批量入库同主题文档后
+    # （如 0079 手册 75 块 vs 0069/0070 指南），词面近邻的同文档块会在窗口内
+    # 霸屏，把原正确块挤出 top-8 → top_cov 跌破兜底线 → 库内题误答「未找到」
+    # （DEF-04/GOV-06 复现，62 题 ret3 54→52）。每文档在窗口内最多 PER_DOC_CAP 块，
+    # 让位给其他文档；POC（tests/poc_doc_cap.py）：cap=4 恢复三题且 qa14 无回归。
     out = []
-    for score, coverage, h in scored[:k]:
+    counts: dict[str, int] = {}
+    for score, coverage, h in scored:
+        d = h["doc_id"]
+        if counts.get(d, 0) >= config.PER_DOC_CAP:
+            continue
+        counts[d] = counts.get(d, 0) + 1
         h["score"] = round(score, 3)
         h["coverage"] = round(coverage, 2)
         out.append(h)
+        if len(out) >= k:
+            break
     return out
 
 

@@ -146,13 +146,23 @@ class TestDemotionTakesEffect(unittest.TestCase):
             f"标为征求意见稿后 0070 未被压后：before={before} after={after}")
 
     def test_live_index_no_longer_leads_with_draft(self):
-        """真实库已核定：征求意见稿不得出现在前 5 位依据中。"""
+        """真实库已核定：征求意见稿不得出现在前 5 位依据中。
+
+        2026-10-24 二次修订：知识库扩充后（0079 应急部手册 / 0078 部令 13 号均为
+        effective 同主题官方文档），top5 已合法地不再包含 0069——本断言的被测对象
+        是「征求意见稿的降权行为」（ADR-006），不是住建文档的排序。断言收敛为：
+        ① 0070 不得出现在 top5；② top5 无任何 consultation 状态文档；
+        ③ 试行版 0069 仍须留在 top8 上下文（住建场景的用户仍能看到它）。"""
         if not os.path.exists(DB):
             self.skipTest("kb/kb.sqlite 不存在")
         hits, _ = R.hybrid_search("有限空间作业前需要检测哪些气体？", 8)
         top5 = [h["doc_id"] for h in hits[:5]]
+        top8 = [h["doc_id"] for h in hits[:8]]
         self.assertNotIn("0070", top5, "征求意见稿仍占据前 5 位依据")
-        self.assertEqual(set(top5), {"0069"}, f"首位依据应为试行版 0069，实际 {top5}")
+        drafts = {h["doc_id"] for h in hits[:8]
+                  if (h.get("valid_status") or "") == "consultation"}
+        self.assertEqual(drafts, set(), f"征求意见稿状态文档占据前 8 位依据：{drafts}")
+        self.assertIn("0069", top8, f"试行版 0069 未进入 top8 上下文，实际 {top8}")
 
 
 if __name__ == "__main__":

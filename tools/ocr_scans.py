@@ -27,11 +27,22 @@ def ocr(img_path, out_txt):
 
 
 # ---- 0067: docx 里的 image1.jpeg ----
+# 注意：0067.docx 本体只有标题行（流程图是内嵌图片）。extract_docs.py 每次重跑都会
+# 把 kb/text/0067.txt 覆盖回空壳（2026-10-24 教训：覆盖后 0067 从索引消失、A9 回归）。
+# 因此标题头部必须在此固化——凡重跑 extract_docs 后，必须重跑本脚本。
+HEADER_0067 = (
+    "附件3\n建设项目开工“一件事”办理流程（示例）\n"
+    "流程说明：建设单位可通过线上（政务服务平台工程建设项目审批管理系统）"
+    "或线下（政务服务中心工程建设项目审批综合服务窗口）申请，"
+    "综合窗口受理并联审批以下事项。\n"
+)
 docx = os.path.join(BASE, "knowledge_base", "docs", "0067_E881602E1F43E30FF348A8F0AF5EDAB1.docx")
 img = os.path.join(IMG_DIR, "0067.jpeg")
 with zipfile.ZipFile(docx) as z:
     open(img, "wb").write(z.read("word/media/image1.jpeg"))
 print("0067:", ocr(img, os.path.join(TEXT_DIR, "0067.txt")))
+_ocr67 = open(os.path.join(TEXT_DIR, "0067.txt"), encoding="utf-8").read()
+open(os.path.join(TEXT_DIR, "0067.txt"), "w", encoding="utf-8").write(HEADER_0067 + _ocr67)
 
 # ---- 0003 / 0004: PDF 内嵌图 ----
 from pypdf import PdfReader

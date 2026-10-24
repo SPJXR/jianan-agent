@@ -49,6 +49,8 @@ RECALL_WINDOW = int(os.environ.get("RECALL_WINDOW", "16"))
 COVERAGE_WEIGHT = float(os.environ.get("COVERAGE_WEIGHT", "2.0"))
 # 口语同义映射（ADR-008）：命中词只扩召回、不进覆盖率分母；词表 kb/synonyms.json
 SYNONYMS = os.environ.get("SYNONYMS", "1") == "1"
+# 窗口内每文档最大块数（2026-10-24 知识库扩充回归修复，见 tests/poc_doc_cap.py）
+PER_DOC_CAP = int(os.environ.get("PER_DOC_CAP", "4"))
 MIN_COVERAGE = float(os.environ.get("MIN_COVERAGE", "0.25"))  # 低于此相关度走"未找到"兜底
 # 低于此相关度视为弱命中，触发「口语 -> 法规术语」LLM 改写后二次检索（两阶段检索）
 REWRITE_MIN_COVERAGE = float(os.environ.get("REWRITE_MIN_COVERAGE", "0.5"))

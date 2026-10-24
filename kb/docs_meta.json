@@ -275,6 +275,27 @@
       "note": "电子证照信息标准｜时效核查（2026-10-12）：同 0075，同一通知的另一份电子证照信息标准；来源 https://www.bcebca.org.cn/ShowNews.aspx?id=13124",
       "valid_status": "effective",
       "version_date": "2024-09-10"
+    },
+    "0077": {
+      "title": "房屋市政工程生产安全重大事故隐患判定标准（2024版）",
+      "category": "施工安全",
+      "status": "ok",
+      "note": "建质规〔2024〕2号，2024年12月印发；来源：云南省应急管理厅转载住建部印发通知全文；2022版（建质规〔2022〕2号）已废止",
+      "valid_status": "effective"
+    },
+    "0078": {
+      "title": "工贸企业有限空间作业安全规定",
+      "category": "有限空间",
+      "status": "ok",
+      "note": "应急管理部令第13号，自2024年1月1日起施行；来源：应急管理部官网（mem.gov.cn）；同时废止2013年暂行规定",
+      "valid_status": "effective"
+    },
+    "0079": {
+      "title": "有限空间作业安全指导手册",
+      "category": "有限空间",
+      "status": "ok",
+      "note": "应急管理部官方指导手册（2020），来源 mem.gov.cn 官方 PDF",
+      "valid_status": "effective"
     }
   }
 }
