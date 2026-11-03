@@ -1,0 +1,106 @@
+{
+ "summary": {
+  "base": "http://47.109.98.111:9000",
+  "tag": "ctx-smoke",
+  "date": "2026-11-03 21:58",
+  "n_total": 3,
+  "n_fact": 3,
+  "n_edge": 0,
+  "retrieval_hit3": "3/3",
+  "ctx_hit": "3/3",
+  "ctx_block_hit": "3/3",
+  "answer_full_cov": "3/3",
+  "citation_rate": "3/3",
+  "fact_all_ok": "3/3",
+  "refusal_pass": "0/0",
+  "boundary_pass": "0/0",
+  "cite_util_avg": 0.3,
+  "cite_pos_dist": "1-3位:6次 4-8位:1次 9+位:3次",
+  "t_med": 1.32,
+  "t_p95": 2.23
+ },
+ "rows": [
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0063",
+    "0064"
+   ],
+   "ctx_cov": 1.0,
+   "ans_cov": 1.0,
+   "citation": true,
+   "cite_util": 0.14,
+   "cite_pos": [
+    1,
+    2
+   ],
+   "miss_kw": [],
+   "id": "DEF-01",
+   "group": "default",
+   "role": "default",
+   "type": "fact",
+   "ok": true,
+   "t": 1.32,
+   "t_first": 0.78,
+   "backend": "llm",
+   "answer": "建筑施工特种作业操作资格考核包括技术理论和操作技能两门科目，两门均通过才算合格。\n\n依据如下：\n1. 考核科目为技术理论和操作技能两门 [1][2]。\n2. 技术理论考核通过后，方可参加操作技能考核 [1][2]。\n3. 两门科目均考核通过的，为考核合格 [1][2]。\n4. 考核大纲由国务院住房城乡建设主管部门制定 [1][2]。"
+  },
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0063",
+    "0064"
+   ],
+   "ctx_cov": 1.0,
+   "ans_cov": 1.0,
+   "citation": true,
+   "cite_util": 0.33,
+   "cite_pos": [
+    1,
+    2
+   ],
+   "miss_kw": [],
+   "id": "DEF-02",
+   "group": "default",
+   "role": "default",
+   "type": "fact",
+   "ok": true,
+   "t": 2.23,
+   "t_first": 1.6,
+   "backend": "llm",
+   "answer": "建筑施工特种作业操作资格证书有效期为3年，且在全国范围内有效，到其他省份从事相应作业仍可使用。\n\n依据如下：\n1. 资格证书在全国范围内有效，有效期为3年 [1][2]。\n2. 该证书实行电子证照，电子证照标准由国务院住房城乡建设主管部门制定 [2]。\n3. 证书需要延续的，应当在有效期届满30个工作日前向原考核发证机关提出延期复核申请，复核通过后有效期延续3年 [1][2]。"
+  },
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0069",
+    "0070"
+   ],
+   "ctx_cov": 1.0,
+   "ans_cov": 1.0,
+   "citation": true,
+   "cite_util": 0.43,
+   "cite_pos": [
+    1,
+    2,
+    6,
+    9,
+    10,
+    11
+   ],
+   "miss_kw": [],
+   "id": "DEF-03",
+   "group": "default",
+   "role": "default",
+   "type": "fact",
+   "ok": true,
+   "t": 1.19,
+   "t_first": 0.72,
+   "backend": "llm",
+   "answer": "有限空间作业应严格遵守“先通风、再检测、后作业、有监护”的原则。\n\n依据：\n- 有限空间作业应严格遵守“先通风、再检测、后作业、有监护”的原则 [1][2]。\n- 施工单位应落实“先通风、再检测、后作业、有监护”原则 [6][9]。\n- 检查中未落实该原则的，按扣分标准扣分 [10][11]。"
+  }
+ ]
+}

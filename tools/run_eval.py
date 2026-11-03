@@ -109,6 +109,15 @@ def score_fact(q: dict, res: dict) -> dict:
     ans = hit_groups(res["answer"], groups)
     n = len(groups) or 1
     miss = [" / ".join(groups[i]) for i in sorted(set(range(len(groups))) - ans)]
+    # ---- 上下文利用率三指标（上下文改进计划第1期，2026-11-03）----
+    # cite_util：答案实际引用的 [n] 编号数 / 进上下文的块数——装配 14 块平均被
+    #            引用几块，衡量上下文装配的信噪比
+    # cite_pos：被引用块在上下文中的位次列表（no 即位次）——位次分布用于检验
+    #            「长上下文中段沉底」（lost in the middle）：若被引用块集中于
+    #            头部而中后段块几乎不被引用，说明装配策略在浪费预算
+    cites = sorted({int(m[1:-1]) for m in CITE_RE.findall(res["answer"])})
+    n_src = len(res["sources"])
+    valid_pos = [c for c in cites if 1 <= c <= n_src]
     return {
         "ret_hit": bool(top3 & exp),
         "ctx_hit": bool(all_docs & exp),
@@ -116,6 +125,8 @@ def score_fact(q: dict, res: dict) -> dict:
         "ctx_cov": round(len(ctx) / n, 2),
         "ans_cov": round(len(ans) / n, 2),
         "citation": bool(CITE_RE.search(res["answer"])),
+        "cite_util": round(len(valid_pos) / n_src, 2) if n_src else 0.0,
+        "cite_pos": valid_pos,
         "miss_kw": miss,
     }
 
@@ -173,6 +184,7 @@ def run(args):
             print(f"  [{i:2}/{len(qs)}] {q['id']:<7} ret={'Y' if sc['ret_hit'] else 'N'} "
                   f"ctxH={'Y' if sc['ctx_hit'] else 'N'} "
                   f"ctx={sc['ctx_cov']:.0%} ans={sc['ans_cov']:.0%} cite={'Y' if sc['citation'] else 'N'} "
+                  f"citeU={sc['cite_util']:.0%} "
                   f"{'OK' if sc['ok'] else 'MISS ' + ','.join(sc['miss_kw'][:3])} ({sc['t']}s)")
         else:
             print(f"  [{i:2}/{len(qs)}] {q['id']:<7} {'PASS' if sc['pass'] else 'REVIEW/FAIL'} ({sc['t']}s)")
@@ -192,6 +204,13 @@ def run(args):
     tt.sort()
     p = lambda x: (tt[min(len(tt) - 1, int(len(tt) * x))] if tt else 0)
 
+    # ---- 上下文利用率汇总（第1期指标）----
+    utils = [r.get("cite_util", 0.0) for r in facts]
+    pos_pool = [p_ for r in facts for p_ in r.get("cite_pos", [])]
+    pos_h1 = sum(1 for x in pos_pool if x <= 3)        # 头部：主证据 top-3
+    pos_h2 = sum(1 for x in pos_pool if 4 <= x <= 8)   # 中段：主证据 4-8
+    pos_h3 = sum(1 for x in pos_pool if x >= 9)        # 尾部：同文档补位块
+
     summary = {
         "base": args.base, "tag": args.tag, "date": time.strftime("%Y-%m-%d %H:%M"),
         "n_total": len(rows), "n_fact": len(facts), "n_edge": len(edges),
@@ -203,6 +222,8 @@ def run(args):
         "fact_all_ok": f"{len(full_ok)}/{len(facts)}",
         "refusal_pass": f"{sum(1 for r in refus if r['pass'])}/{len(refus)}",
         "boundary_pass": f"{sum(1 for r in bounds if r['pass'])}/{len(bounds)}",
+        "cite_util_avg": round(statistics.mean(utils), 2) if utils else 0.0,
+        "cite_pos_dist": f"1-3位:{pos_h1}次 4-8位:{pos_h2}次 9+位:{pos_h3}次",
         "t_med": round(statistics.median(tt), 2) if tt else 0,
         "t_p95": round(p(0.95), 2),
     }
