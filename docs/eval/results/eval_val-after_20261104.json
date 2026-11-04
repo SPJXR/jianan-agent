@@ -1,0 +1,126 @@
+{
+ "summary": {
+  "base": "http://127.0.0.1:9001",
+  "tag": "val-after",
+  "date": "2026-11-04 14:56",
+  "n_total": 4,
+  "n_fact": 4,
+  "n_edge": 0,
+  "retrieval_hit3": "4/4",
+  "ctx_hit": "4/4",
+  "ctx_block_hit": "2/4",
+  "answer_full_cov": "3/4",
+  "citation_rate": "2/4",
+  "fact_all_ok": "2/4",
+  "refusal_pass": "0/0",
+  "boundary_pass": "0/0",
+  "cite_util_avg": 0.21,
+  "cite_pos_dist": "1-3位:6次 4-8位:2次 9+位:0次",
+  "t_med": 1.66,
+  "t_p95": 1.8
+ },
+ "rows": [
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0069"
+   ],
+   "ctx_cov": 1.0,
+   "ans_cov": 1.0,
+   "citation": true,
+   "cite_util": 0.4,
+   "cite_pos": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "miss_kw": [],
+   "id": "VAL-01",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": true,
+   "t": 1.8,
+   "t_first": 1.22,
+   "backend": "llm",
+   "answer": "《房屋市政工程有限空间识别及施工安全作业指南（试行）》目前为试行文本，已印发施行，现行有效。\n\n依据：\n1. 该指南标注状态为“试行，已印发施行，现行有效” [1][2][3][4]。\n2. 指南前言说明其由住房城乡建设部组织编制，用于指导房屋市政工程有限空间作业风险防控 [2]。\n3. 其适用范围为房屋市政工程施工现场有限空间作业安全管理 [3]。"
+  },
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0069"
+   ],
+   "ctx_cov": 0.67,
+   "ans_cov": 1.0,
+   "citation": false,
+   "cite_util": 0.0,
+   "cite_pos": [],
+   "miss_kw": [],
+   "id": "VAL-02",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": false,
+   "t": 1.79,
+   "t_first": 1.31,
+   "backend": "llm",
+   "answer": "知识库中未找到与该问题直接相关的条款。现有片段只涉及《房屋市政工程有限空间识别及施工安全作业指南（试行）》的现行内容，没有关于“征求意见稿”与“试行版”差异的条款，也未规定二者以何为准。建议换个问法，或查看知识库来源。"
+  },
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0071"
+   ],
+   "ctx_cov": 1.0,
+   "ans_cov": 1.0,
+   "citation": true,
+   "cite_util": 0.44,
+   "cite_pos": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "miss_kw": [],
+   "id": "VAL-03",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": true,
+   "t": 1.53,
+   "t_first": 1.05,
+   "backend": "llm",
+   "answer": "是的，该清单是试行文件，且已印发施行、现行有效。\n\n依据如下：\n1. 片段[1]标注该文件为《危险性较大的分部分项工程专项施工方案严重缺陷清单（试行）》，状态为“试行，已印发施行，现行有效”[1]。\n2. 片段[2]、[3]、[4]同样标注该清单为试行文件，状态均为“试行，已印发施行，现行有效”[2][3][4]。"
+  },
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0078",
+    "0079"
+   ],
+   "ctx_cov": 0.5,
+   "ans_cov": 0.0,
+   "citation": false,
+   "cite_util": 0.0,
+   "cite_pos": [],
+   "miss_kw": [
+    "2024年1月1日",
+    "有效 / 施行 / 现行"
+   ],
+   "id": "VAL-04",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": false,
+   "t": 1.24,
+   "t_first": 1.03,
+   "backend": "llm",
+   "answer": "知识库中未找到与该问题直接相关的条款。建议用户换个问法或查看知识库来源。"
+  }
+ ]
+}

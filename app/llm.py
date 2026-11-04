@@ -134,18 +134,51 @@ async def rewrite_query(
         return None
 
 
-async def stream_chat(
-    snippets: list[dict],
-    question: str,
-    history: typing.Optional[list[dict]] = None,
-    role: str = "default",
-) -> typing.AsyncGenerator[str, None]:
-    """调用 LLM 流式生成，逐段 yield 文本增量。
+# ---- 时效状态进上下文（上下文改进计划 3.3，2026-11-04，ADR-006 生成侧对齐）----
+# ADR-006 的时效核定此前只作用于检索侧（降权/分区）与前端徽章；LLM 看到的片段
+# 头只有《标题》条款，无从区分现行/试行/未生效/已废止——实测状态类问题
+# （"指南生效了吗""两版本以哪个为准"）要么拒答要么答"无法判断"（基线
+# eval_val-before_20261104）。此处把 docs 表的核定结论以〔状态〕行注入片段头，
+# 与 ADR-006 词表及前端徽章同口径：
+#   effective     现行有效
+#   trial         试行，已印发施行，现行有效（检索侧不降权，生成侧也不含糊）
+#   consultation  征求意见稿，未生效，不得作为现行施工依据
+#   repealed      已废止，不得作为现行依据
+# 未核定（na / unknown / 空）不标注——与 ADR-006「未核定不动作」同哲学：
+# 11 份 unknown 若标注「时效待确认」会诱发 LLM 对其内容 hedge/拒答，
+# 而 A7/A8/C3 的依据文档恰在其中，属无实证的回归风险，不做。
+_VALIDITY_NOTE = {
+    "effective": "〔状态：现行有效〕",
+    "trial": "〔状态：试行，已印发施行，现行有效〕",
+    "consultation": "〔状态：征求意见稿，未生效，不得作为现行施工依据〕",
+    "repealed": "〔状态：已废止，不得作为现行依据〕",
+}
 
-    snippets: 检索命中的条款片段（含 no/title/clause/text）
-    history: 多轮上下文（[{role:"user"|"assistant", content:str}]），为空时与 v1 逐字节一致
-    role: 角色化提示词（迭代5/ADR-003），default 与 V4 现网系统提示词逐字节一致
-    出错抛 LLMError；调用方负责降级。
+# 有〔状态〕标注时的说明行（置于片段块之前），让 LLM 把〔状态〕当作元数据
+# 而非条款原文；措辞与 ADR-006「未标注=未核定=与现行同权」的检索侧口径一致。
+_VALIDITY_LEAD = (
+    "（〔状态〕为该文件的人工核定时效状态，属于片段内容，可据此回答文件时效与"
+    "版本取舍问题：未生效或已废止的不得作为现行依据，回答涉及时须明示其状态；"
+    "同一文件多版本并存时，以标注现行有效或试行有效的版本为准；"
+    "未标注的按普通现行文本对待。）"
+)
+
+
+def validity_note(status: str) -> str:
+    """valid_status -> 片段头〔状态〕标注；未核定（na/unknown/空）返回空串。"""
+    return _VALIDITY_NOTE.get((status or "").strip().lower(), "")
+
+
+def _snippet_status(s: dict) -> str:
+    """sources 载荷（camelCase）与检索命中（snake_case）两种键名都兼容。"""
+    return s.get("validStatus") or s.get("valid_status") or ""
+
+
+def build_context(snippets: list[dict]) -> str:
+    """把 sources 片段装配为用户消息里的「法规片段」块（纯函数，便于单测）。
+
+    未核定语料（无〔状态〕）时输出与历史版本逐字节一致——零标注零改动，
+    保证 62 题基线在该路径上的回归红线。
     """
     ctx_lines = []
     for s in snippets:
@@ -154,8 +187,31 @@ async def stream_chat(
             loc += s["clause"]
         if s.get("pages"):
             loc += f"（{s['pages']}）"
-        ctx_lines.append(f"[{s['no']}] {loc}\n{_flow(s['full'])}")
+        head = f"[{s['no']}] {loc}"
+        note = validity_note(_snippet_status(s))
+        if note:
+            head += note
+        ctx_lines.append(f"{head}\n{_flow(s['full'])}")
     context = "\n\n".join(ctx_lines)
+    if any(validity_note(_snippet_status(s)) for s in snippets):
+        context = _VALIDITY_LEAD + "\n\n" + context
+    return context
+
+
+async def stream_chat(
+    snippets: list[dict],
+    question: str,
+    history: typing.Optional[list[dict]] = None,
+    role: str = "default",
+) -> typing.AsyncGenerator[str, None]:
+    """调用 LLM 流式生成，逐段 yield 文本增量。
+
+    snippets: 检索命中的条款片段（含 no/title/clause/pages/full[/validStatus]）
+    history: 多轮上下文（[{role:"user"|"assistant", content:str}]），为空时与 v1 逐字节一致
+    role: 角色化提示词（迭代5/ADR-003），default 与 V4 现网系统提示词逐字节一致
+    出错抛 LLMError；调用方负责降级。
+    """
+    context = build_context(snippets)
 
     # 系统提示词按角色生成（prompts.system_prompt）：default 与 V4 逐字节一致，
     # 角色模板共享同一份契约规则（引用/拒答红线），只加角色设定与输出侧重。

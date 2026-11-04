@@ -1,0 +1,81 @@
+{
+  "name": "时效状态专项评测集（上下文改进计划 3.3）",
+  "version": "1",
+  "date": "2026-11-04",
+  "base": "生成侧时效对齐：0069/0071 trial、0078 effective",
+  "grounding": "retrieval_hit3 命中 expected_docs 任一文档；answer 关键词组全覆盖且含 [n] 引用",
+  "roles": [],
+  "distribution": {"fact": 4},
+  "scoring": "与 eval_set_v2.json 同口径（run_eval.py score_fact）",
+  "questions": [
+    {
+      "id": "VAL-01",
+      "group": "validity",
+      "role": "default",
+      "type": "fact",
+      "question": "房屋市政工程有限空间识别及施工安全作业指南现在是什么状态？生效了吗？",
+      "expected_docs": ["0069"],
+      "clause": "0069 文首/总则",
+      "key_points": [
+        "该指南为试行版",
+        "已印发施行，现行有效"
+      ],
+      "keywords": [
+        ["试行"],
+        ["施行", "现行", "有效"]
+      ]
+    },
+    {
+      "id": "VAL-02",
+      "group": "validity",
+      "role": "default",
+      "type": "fact",
+      "question": "有限空间作业安全指南的征求意见稿和试行版有什么区别？施工应该以哪个为准？",
+      "expected_docs": ["0069", "0070"],
+      "clause": "0069 全文",
+      "key_points": [
+        "以试行版为准（现行）",
+        "征求意见稿未生效/不得作为施工依据"
+      ],
+      "keywords": [
+        ["试行"],
+        ["为准", "依据", "执行"],
+        ["未生效", "尚未", "征求意见"]
+      ],
+      "note": "抖动观察题（非硬门）：0070 经检索降权不进 top-8，LLM 在「按〔状态〕作答」与「契约规则 4 拒答」间摆，两种行为均合规；v2 说明行 0/3、v3 澄清后 2/3 通过。未生效防线由 tests/poc_validity_gen.py 探针与 validity_ctx_test.py 硬守卫"
+    },
+    {
+      "id": "VAL-03",
+      "group": "validity",
+      "role": "default",
+      "type": "fact",
+      "question": "专项施工方案严重缺陷清单是试行文件吗？现在有效吗？",
+      "expected_docs": ["0071"],
+      "clause": "0071 文首",
+      "key_points": [
+        "属试行文件",
+        "已印发施行，现行有效"
+      ],
+      "keywords": [
+        ["试行"],
+        ["有效", "施行", "现行"]
+      ]
+    },
+    {
+      "id": "VAL-04",
+      "group": "validity",
+      "role": "default",
+      "type": "fact",
+      "question": "工贸企业有限空间作业安全规定现在还有效吗？",
+      "expected_docs": ["0078"],
+      "clause": "0078 全文",
+      "key_points": [
+        "现行有效"
+      ],
+      "keywords": [
+        ["现行", "有效"]
+      ],
+      "note": "「是什么时候施行的」问法为已知检索边界（施行日期块第22条排窗口 15+ 位，PM-06 类），不作为 3.3 验收项"
+    }
+  ]
+}

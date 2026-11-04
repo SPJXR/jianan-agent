@@ -1,0 +1,48 @@
+{
+ "summary": {
+  "base": "http://127.0.0.1:9001",
+  "tag": "val-jitter3",
+  "date": "2026-11-04 17:28",
+  "n_total": 1,
+  "n_fact": 1,
+  "n_edge": 0,
+  "retrieval_hit3": "1/1",
+  "ctx_hit": "1/1",
+  "ctx_block_hit": "0/1",
+  "answer_full_cov": "0/1",
+  "citation_rate": "0/1",
+  "fact_all_ok": "0/1",
+  "refusal_pass": "0/0",
+  "boundary_pass": "0/0",
+  "cite_util_avg": 0.0,
+  "cite_pos_dist": "1-3位:0次 4-8位:0次 9+位:0次",
+  "t_med": 1.54,
+  "t_p95": 1.54
+ },
+ "rows": [
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0069"
+   ],
+   "ctx_cov": 0.67,
+   "ans_cov": 0.67,
+   "citation": false,
+   "cite_util": 0.0,
+   "cite_pos": [],
+   "miss_kw": [
+    "为准 / 依据 / 执行"
+   ],
+   "id": "VAL-02",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": false,
+   "t": 1.54,
+   "t_first": 1.18,
+   "backend": "llm",
+   "answer": "知识库中未找到与该问题直接相关的条款。现有片段只涉及试行版的内容和状态，没有关于“征求意见稿”及其与试行版差异的条款。建议换个问法，或查看知识库来源。"
+  }
+ ]
+}

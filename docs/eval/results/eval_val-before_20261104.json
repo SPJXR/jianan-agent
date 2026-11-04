@@ -1,0 +1,129 @@
+{
+ "summary": {
+  "base": "http://127.0.0.1:9001",
+  "tag": "val-before",
+  "date": "2026-11-04 14:54",
+  "n_total": 4,
+  "n_fact": 4,
+  "n_edge": 0,
+  "retrieval_hit3": "4/4",
+  "ctx_hit": "4/4",
+  "ctx_block_hit": "2/4",
+  "answer_full_cov": "2/4",
+  "citation_rate": "2/4",
+  "fact_all_ok": "2/4",
+  "refusal_pass": "0/0",
+  "boundary_pass": "0/0",
+  "cite_util_avg": 0.18,
+  "cite_pos_dist": "1-3位:6次 4-8位:1次 9+位:0次",
+  "t_med": 1.69,
+  "t_p95": 2.21
+ },
+ "rows": [
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0069"
+   ],
+   "ctx_cov": 1.0,
+   "ans_cov": 1.0,
+   "citation": true,
+   "cite_util": 0.3,
+   "cite_pos": [
+    1,
+    2,
+    3
+   ],
+   "miss_kw": [],
+   "id": "VAL-01",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": true,
+   "t": 2.21,
+   "t_first": 1.37,
+   "backend": "llm",
+   "answer": "根据现有片段，只能确认该指南已编制并发布，但片段中没有关于其生效状态或施行日期的规定。\n\n依据说明：\n1. 该指南全称为《房屋市政工程有限空间识别及施工安全作业指南（试行）》，由住房城乡建设部组织有关单位编制，封面标注时间为2025年6月 [1][2]。\n2. 其编制目的是为精准识别、快速判定、防范化解有限空间作业风险提供指导依据，适用于房屋市政工程施工现场有限空间作业安全管理 [2][3]。\n3. 上述片段均未提及该指南的生效日期、施行状态或是否已正式生效，因此无法据此判断其是否生效。"
+  },
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0069"
+   ],
+   "ctx_cov": 0.67,
+   "ans_cov": 0.0,
+   "citation": false,
+   "cite_util": 0.0,
+   "cite_pos": [],
+   "miss_kw": [
+    "试行",
+    "为准 / 依据 / 执行",
+    "未生效 / 尚未 / 征求意见"
+   ],
+   "id": "VAL-02",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": false,
+   "t": 0.99,
+   "t_first": 0.75,
+   "backend": "llm",
+   "answer": "知识库中未找到与该问题直接相关的条款。建议用户换个问法或查看知识库来源。"
+  },
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0071"
+   ],
+   "ctx_cov": 1.0,
+   "ans_cov": 1.0,
+   "citation": true,
+   "cite_util": 0.44,
+   "cite_pos": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "miss_kw": [],
+   "id": "VAL-03",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": true,
+   "t": 2.2,
+   "t_first": 0.96,
+   "backend": "llm",
+   "answer": "结论：该清单确为试行文件；在专项施工方案审核、审查、专家论证环节，方案存在严重缺陷的应不予通过，在实施环节存在严重缺陷的应判定为重大事故隐患 [1]。\n\n依据：\n1. 文件名称本身标注为《危险性较大的分部分项工程专项施工方案严重缺陷清单（试行）》，属于试行文件 [1][2][3][4]。\n2. 该清单适用于新建、扩建、改建、拆除房屋市政工程专项施工方案编制、审核、审查、专家论证等环节的严重缺陷判定 [1]。\n3. 在专项施工方案审核、审查、专家论证等环节，方案存在严重缺陷的，其审核、审查和专家论证应不予通过 [1]。\n4. 在专项施工方案实施环节，方案存在严重缺陷的，应判定为重大事故隐患 [1]。\n\n说明：所提供的片段未包含该试行文件的发布机关、发布日期、试行期限或废止信息，因此无法仅依据片段判断其当前是否仍然有效，建议查阅文件原文或发布机关公告确认。"
+  },
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0078",
+    "0079"
+   ],
+   "ctx_cov": 0.5,
+   "ans_cov": 0.0,
+   "citation": false,
+   "cite_util": 0.0,
+   "cite_pos": [],
+   "miss_kw": [
+    "2024年1月1日",
+    "有效 / 施行 / 现行"
+   ],
+   "id": "VAL-04",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": false,
+   "t": 1.18,
+   "t_first": 1.04,
+   "backend": "llm",
+   "answer": "知识库中未找到与该问题直接相关的条款。建议用户换个问法或查看知识库来源。"
+  }
+ ]
+}

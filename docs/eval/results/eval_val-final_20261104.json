@@ -1,0 +1,128 @@
+{
+ "summary": {
+  "base": "http://127.0.0.1:9001",
+  "tag": "val-final",
+  "date": "2026-11-04 17:27",
+  "n_total": 4,
+  "n_fact": 4,
+  "n_edge": 0,
+  "retrieval_hit3": "4/4",
+  "ctx_hit": "4/4",
+  "ctx_block_hit": "3/4",
+  "answer_full_cov": "4/4",
+  "citation_rate": "3/4",
+  "fact_all_ok": "3/4",
+  "refusal_pass": "0/0",
+  "boundary_pass": "0/0",
+  "cite_util_avg": 0.29,
+  "cite_pos_dist": "1-3位:9次 4-8位:2次 9+位:1次",
+  "t_med": 1.68,
+  "t_p95": 1.79
+ },
+ "rows": [
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0069"
+   ],
+   "ctx_cov": 1.0,
+   "ans_cov": 1.0,
+   "citation": true,
+   "cite_util": 0.3,
+   "cite_pos": [
+    1,
+    2,
+    3
+   ],
+   "miss_kw": [],
+   "id": "VAL-01",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": true,
+   "t": 1.76,
+   "t_first": 1.07,
+   "backend": "llm",
+   "answer": "《房屋市政工程有限空间识别及施工安全作业指南（试行）》目前为试行状态，已印发施行，现行有效，可以作为现行依据使用 [1][2][3]。\n\n依据说明：\n1. 该指南标注为“试行，已印发施行，现行有效”，不属于未生效或已废止文件 [1]。\n2. 前言说明该指南由住房城乡建设部组织编制，用于指导房屋市政工程有限空间作业风险防控 [2]。\n3. 其总则与基本规定部分明确适用于房屋市政工程施工现场有限空间作业安全管理 [3]。"
+  },
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0069"
+   ],
+   "ctx_cov": 0.67,
+   "ans_cov": 1.0,
+   "citation": false,
+   "cite_util": 0.0,
+   "cite_pos": [],
+   "miss_kw": [],
+   "id": "VAL-02",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": false,
+   "t": 1.44,
+   "t_first": 0.95,
+   "backend": "llm",
+   "answer": "知识库中未找到与该问题直接相关的条款。现有片段只涉及试行版的内容及其“试行、现行有效”状态，没有征求意见稿的文本，也没有两者差异的对比条款，无法据此判断区别和适用依据。建议换个问法，或查看知识库来源。"
+  },
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0071"
+   ],
+   "ctx_cov": 1.0,
+   "ans_cov": 1.0,
+   "citation": true,
+   "cite_util": 0.44,
+   "cite_pos": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "miss_kw": [],
+   "id": "VAL-03",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": true,
+   "t": 1.6,
+   "t_first": 1.06,
+   "backend": "llm",
+   "answer": "结论：该清单是试行文件，目前已印发施行，现行有效。\n\n依据：\n1. 《危险性较大的分部分项工程专项施工方案严重缺陷清单（试行）》标注状态为“试行，已印发施行，现行有效” [1][2][3][4]。\n2. 该清单适用于新建、扩建、改建、拆除房屋市政工程专项施工方案编制、审核、审查、专家论证等环节的严重缺陷判定 [1]。"
+  },
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0078",
+    "0079"
+   ],
+   "ctx_cov": 1.0,
+   "ans_cov": 1.0,
+   "citation": true,
+   "cite_util": 0.42,
+   "cite_pos": [
+    1,
+    2,
+    3,
+    4,
+    12
+   ],
+   "miss_kw": [],
+   "id": "VAL-04",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": true,
+   "t": 1.79,
+   "t_first": 0.89,
+   "backend": "llm",
+   "answer": "《工贸企业有限空间作业安全规定》现行有效，可以作为现行依据。\n\n依据如下：\n1. 知识库中收录的该规定各条款片段均标注为“现行有效”，包括第八条至第十三条 [1]、第一条至第七条 [2]、第十四条至第十七条 [12]、第十八条至第二十一条 [4]。\n2. 该规定适用于冶金、有色、建材、机械、轻工、纺织、烟草、商贸等行业生产经营单位的有限空间作业安全管理与监督 [2]。\n\n需要说明的是，片段 [3] 所列《工贸企业有限空间作业安全管理与监督暂行规定》（原国家安监总局令第59号）系另一部文件，不能据此判断本规定的效力。"
+  }
+ ]
+}

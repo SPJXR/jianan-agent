@@ -1,0 +1,48 @@
+{
+ "summary": {
+  "base": "http://127.0.0.1:9001",
+  "tag": "val-v3-2",
+  "date": "2026-11-04 17:29",
+  "n_total": 1,
+  "n_fact": 1,
+  "n_edge": 0,
+  "retrieval_hit3": "1/1",
+  "ctx_hit": "1/1",
+  "ctx_block_hit": "0/1",
+  "answer_full_cov": "0/1",
+  "citation_rate": "0/1",
+  "fact_all_ok": "0/1",
+  "refusal_pass": "0/0",
+  "boundary_pass": "0/0",
+  "cite_util_avg": 0.0,
+  "cite_pos_dist": "1-3位:0次 4-8位:0次 9+位:0次",
+  "t_med": 2.08,
+  "t_p95": 2.08
+ },
+ "rows": [
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0069"
+   ],
+   "ctx_cov": 0.67,
+   "ans_cov": 0.67,
+   "citation": false,
+   "cite_util": 0.0,
+   "cite_pos": [],
+   "miss_kw": [
+    "为准 / 依据 / 执行"
+   ],
+   "id": "VAL-02",
+   "group": "validity",
+   "role": "default",
+   "type": "fact",
+   "ok": false,
+   "t": 2.08,
+   "t_first": 1.38,
+   "backend": "llm",
+   "answer": "知识库中未找到与该问题直接相关的条款。现有片段只涉及《房屋市政工程有限空间识别及施工安全作业指南（试行）》的试行版本内容及其“试行、现行有效”状态，没有收录征求意见稿，也未对两者差异或版本取舍作出规定。建议换个问法，或查看知识库来源。"
+  }
+ ]
+}

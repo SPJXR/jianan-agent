@@ -1,0 +1,34 @@
+{
+ "summary": {
+  "base": "http://127.0.0.1:9001",
+  "tag": "edge05-1",
+  "date": "2026-11-04 17:36",
+  "n_total": 1,
+  "n_fact": 0,
+  "n_edge": 1,
+  "retrieval_hit3": "0/0",
+  "ctx_hit": "0/0",
+  "ctx_block_hit": "0/0",
+  "answer_full_cov": "0/0",
+  "citation_rate": "0/0",
+  "fact_all_ok": "0/0",
+  "refusal_pass": "0/0",
+  "boundary_pass": "0/1",
+  "cite_util_avg": 0.0,
+  "cite_pos_dist": "1-3位:0次 4-8位:0次 9+位:0次",
+  "t_med": 1.82,
+  "t_p95": 1.82
+ },
+ "rows": [
+  {
+   "pass": false,
+   "id": "EDGE-05",
+   "group": "edge",
+   "role": "default",
+   "type": "boundary",
+   "t": 1.82,
+   "t_first": 1.12,
+   "answer": "关于安全帽的具体技术指标，知识库片段中未给出具体数值或指标要求，仅能确认以下配备与合规要求：\n\n1. 有限空间作业中，每名应急救援人员应配置1个安全帽 [3]。\n2. 作业人员应佩戴符合 GB 2811 规定的安全帽 [9]。\n3. 高处作业与安全防护相关标准规范中列有《头部防护 安全帽》，要求熟悉高处作业的安全防护和个人防护用品的使用要求 [8]。\n\n如需具体技术指标数值，建议查阅 GB 2811 标准原文。"
+  }
+ ]
+}
