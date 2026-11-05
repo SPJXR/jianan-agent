@@ -165,7 +165,15 @@ async def _chat_stream(question: str, history: list = None, role: str = "default
     supplement = [h for h in hits[config.RETRIEVAL_TOP_K:]
                   if h["doc_id"] in primary_docs][:6]
     context_hits = primary + supplement
-    top_cov = max((h["coverage"] for h in primary), default=0.0)
+    # 兜底判据（2.4，2026-11-05，恢复 ADR-002 契约）：hybrid_search 返回的 top_cov
+    # 是 BM25 主判据（弱命中改写路径含 max(top_cov, top2)），向量块 coverage 恒 0
+    # （vector_search.py L153 设计如此）。旧实现用 primary 块字段无条件重算，在
+    # 「向量语义救回正确块但改写未超越原覆盖率」的场景（PM-02「证书快到期怎么
+    # 办理延续」：改写词 top2=0.45 == top_cov=0.45 合并不触发，5 块全是向量块）
+    # 把 top_cov 归零 → sources 已展示完美答案块却回「未找到」——引用卡片与答案
+    # 自相矛盾。取两判据较大值：强命中/改写合并路径两值相等零变化，仅向量独占
+    # 路径恢复 BM25 判据；BM25 无命中仍兜底（向量不救零命中，ADR-002 不变）。
+    top_cov = max(top_cov, max((h["coverage"] for h in primary), default=0.0))
 
     yield _sse("status", {"stage": "retrieved", "hits": len(context_hits),
                           "docs": len({h["doc_id"] for h in context_hits})})
