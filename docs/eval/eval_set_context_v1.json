@@ -1,0 +1,304 @@
+{
+ "meta": {
+  "name": "上下文处理升级专项评测集 v1（阶段0产物，2026-11-07）",
+  "kb_revision": "kb37-509-2c3f67298ed0",
+  "baseline_code": "git e1884d6 + 未提交补丁 e5f2bd40（相邻注入3.1）",
+  "categories": {
+   "A": "跨块与条款关系", "B": "适用范围", "C": "内容类型",
+   "D": "时效与附件", "E": "多轮约束", "F": "证据不足"
+  },
+  "splits_note": "dev 12 题供开发调参；holdout 12 题在开发期间不得用于调参。注意：本集由实施者本人编写，holdout 只是留出集而非真盲测；最终验收前应由用户或第三方补充未见过的新题替换 holdout。",
+  "gold_integrity": "本文件金标仅用于离线评分与人工审核，严禁被在线服务、检索触发逻辑或补检规划模型读取。",
+  "usage": "阶段1评测迁移后由扩展的评测工具消费；当前 run_eval.py 不读取本文件。",
+  "grounding_evidence": "baselines/ctx-upgrade-s0-20261107/grounding_report.txt / grounding2_report.txt / grounding3_report.txt"
+ },
+ "questions": [
+  {
+   "id": "A-01", "category": "A", "split": "dev", "type": "fact", "role": "default",
+   "question": "总建筑面积大于五百平方米的歌舞厅属于特殊建设工程吗？需要办理消防设计审查吗？",
+   "expected_docs": ["0065"],
+   "required_evidence": [
+    {"doc_id": "0065", "chunk_id": 201, "why": "特殊建设工程清单前半（尾『；』断裂）"},
+    {"doc_id": "0065", "chunk_id": 202, "why": "答案所在相邻续项（六）歌舞厅500㎡"}
+   ],
+   "gold_key_points": ["属于特殊建设工程", "需要办理消防设计审查", "出处：0065 清单（六）总建筑面积大于五百平方米的歌舞厅等"],
+   "unacceptable": ["结论落在主块却引用号无法追溯续项", "用其他文档推测范围"],
+   "applicability": "house_municipal", "content_type_probe": "body"
+  },
+  {
+   "id": "A-02", "category": "A", "split": "dev", "type": "fact", "role": "default",
+   "question": "有限空间垂直方向检测时，检测点数量有什么要求？",
+   "expected_docs": ["0069"],
+   "required_evidence": [
+    {"doc_id": "0069", "chunk_id": 235, "why": "4.6.7 检测点确定要求（尾『：』断裂）"},
+    {"doc_id": "0069", "chunk_id": 236, "why": "相邻续块：垂直≥3点、上下点距顶底≤1m、间距≤8m、竖向<2m设2点"}
+   ],
+   "gold_key_points": ["垂直方向检测点数量不应少于3个", "上、下检测点距有限空间顶部和底部均不应超过1m", "检测点间距不应超过8m", "竖向距离不足2m的设上下2个点"],
+   "unacceptable": ["只答『不少于3个』而丢失距离条件", "引用位次错误"],
+   "applicability": "house_municipal", "content_type_probe": "body"
+  },
+  {
+   "id": "A-03", "category": "A", "split": "holdout", "type": "fact", "role": "default",
+   "question": "有限空间作业过程中，监护人员在有限空间外全程监护，主要做好哪两方面工作？",
+   "expected_docs": ["0079"],
+   "required_evidence": [
+    {"doc_id": "0079", "chunk_id": 460, "why": "4.2.3 作业监护引出（尾『：』断裂）"},
+    {"doc_id": "0079", "chunk_id": 461, "why": "相邻续块：①跟踪作业过程/异常撤离警报 ②防止未经许可人员进入"}
+   ],
+   "gold_key_points": ["跟踪作业人员作业过程并保持信息沟通，发现气体环境不良变化、防护失效等立即发撤离警报并协助撤离", "防止未经许可的人员进入作业区域"],
+   "unacceptable": ["把『不得擅离职守』之外的要求编入两项工作"],
+   "applicability": "general_manual", "content_type_probe": "body"
+  },
+  {
+   "id": "A-04", "category": "A", "split": "holdout", "type": "fact", "role": "default",
+   "question": "有限空间作业存在哪些情况时，施工单位应重新辨识危险有害因素并同步更新管理台账？",
+   "expected_docs": ["0069"],
+   "required_evidence": [
+    {"doc_id": "0069", "chunk_id": 218, "why": "2.2.5 引出（尾『：』断裂）"},
+    {"doc_id": "0069", "chunk_id": 219, "why": "相邻续块：三种变化情形"}
+   ],
+   "gold_key_points": ["作业部位发生较大变化", "施工工艺、材料、设施设备等发生变化", "水位、通风、气温等作业环境发生较大变化"],
+   "unacceptable": ["丢失『较大』限定词"],
+   "applicability": "house_municipal", "content_type_probe": "body"
+  },
+  {
+   "id": "B-01", "category": "B", "split": "dev", "type": "fact", "role": "default",
+   "question": "房屋市政工程的有限空间作业，照明灯具额定电压有什么限制？",
+   "expected_docs": ["0069"],
+   "required_evidence": [{"doc_id": "0069", "chunk_id": 227, "why": "3.5.3 照明电压三档及条件"}],
+   "gold_key_points": ["一般有限空间内照明灯具额定电压不应超过36V", "进入金属结构有限空间作业时不应超过24V", "积水、结露等潮湿环境不应超过12V"],
+   "unacceptable": ["引用0079练习题选项作为规范依据", "丢失适用条件只报单一数值"],
+   "applicability": "house_municipal", "content_type_probe": "body"
+  },
+  {
+   "id": "B-02", "category": "B", "split": "dev", "type": "fact", "role": "default",
+   "question": "工贸企业开展有限空间作业，对照明灯具有什么要求？",
+   "expected_docs": ["0078"],
+   "required_evidence": [
+    {"doc_id": "0078", "chunk_id": 413, "why": "第十四条：存在爆炸风险的，照明灯具等应符合防爆安全要求"},
+    {"doc_id": "0079", "chunk_id": 450, "why": "可选并列：手册3.5.2 24V/12V（指导性材料，需注明性质）"}
+   ],
+   "gold_key_points": ["存在爆炸风险的，相关电气设施设备、照明灯具、应急救援装备等应当符合防爆安全要求（0078 第十四条）"],
+   "unacceptable": ["把0069房屋市政的36V/24V/12V当作工贸企业的规定依据"],
+   "applicability": "gongmao", "content_type_probe": "body"
+  },
+  {
+   "id": "B-03", "category": "B", "split": "holdout", "type": "applicability", "role": "default",
+   "question": "有限空间作业照明电压不能超过多少？",
+   "expected_docs": ["0069", "0079"],
+   "required_evidence": [
+    {"doc_id": "0069", "chunk_id": 227, "why": "房屋市政口径 36V/24V/12V"},
+    {"doc_id": "0079", "chunk_id": 450, "why": "手册口径 24V/12V"}
+   ],
+   "gold_key_points": ["必须区分适用范围作答或先澄清场景：房屋市政按0069（一般36V/金属结构24V/潮湿12V）；手册（工贸指导）为24V/12V", "不得给出无适用范围限定的单一数值"],
+   "unacceptable": ["无范围限定直接答一个数", "引用练习题选项作为规定"],
+   "applicability": "unspecified_scope_clarify", "content_type_probe": "body"
+  },
+  {
+   "id": "B-04", "category": "B", "split": "holdout", "type": "applicability", "role": "default",
+   "question": "工贸企业的有限空间作业需要签发作业票吗？",
+   "expected_docs": ["0078", "0069"],
+   "required_evidence": [
+    {"doc_id": "0078", "chunk_id": 411, "why": "0078 有作业审批要求（第二十一条对未落实审批的处罚见414）"},
+    {"doc_id": "0069", "chunk_id": 229, "why": "『施工单位签发作业票』为房屋市政指南表述（4.3.1）"}
+   ],
+   "gold_key_points": ["0078（工贸）要求落实有限空间作业审批，但全文没有『作业票』这一表述", "『施工单位签发作业票』出自0069（房屋市政），不应直接套用到工贸企业", "应说明两者适用范围差异，或先澄清所属行业"],
+   "unacceptable": ["断言工贸必须签发作业票（库内无此依据）", "混用0069表述当作0078规定"],
+   "applicability": "gongmao", "content_type_probe": "body",
+   "notes": "已实证：『作业票』在0078全文0次命中（grounding3_report）"
+  },
+  {
+   "id": "C-01", "category": "C", "split": "dev", "type": "content_type", "role": "default",
+   "question": "《有限空间作业安全指导手册》附录的选择题第13题：在积水、结露等潮湿环境的有限空间和金属容器中作业，照明灯具电压应不大于（ ）。正确选项是哪个？",
+   "expected_docs": ["0079"],
+   "required_evidence": [
+    {"doc_id": "0079", "chunk_id": 488, "why": "练习题题面与选项（A.220V B.110V C.36V D.12V）"},
+    {"doc_id": "0079", "chunk_id": 450, "why": "正文3.5.2：潮湿环境与金属容器 12V（验证选项依据）"}
+   ],
+   "gold_key_points": ["正确选项为 D. 12V", "应说明这是手册练习题，其正确选项与正文3.5.2一致"],
+   "unacceptable": ["把练习题选项当作规范条文引用", "答36V（干扰项）"],
+   "applicability": "general_manual", "content_type_probe": "quiz"
+  },
+  {
+   "id": "C-02", "category": "C", "split": "dev", "type": "content_type", "role": "default",
+   "question": "《有限空间作业安全指导手册》目录中第 1 章的标题是什么？",
+   "expected_docs": ["0079"],
+   "required_evidence": [{"doc_id": "0079", "chunk_id": 416, "why": "目录页：1 有限空间作业安全基础知识"}],
+   "gold_key_points": ["第1章标题为『有限空间作业安全基础知识』", "信息来自目录页"],
+   "unacceptable": ["把目录页当正文条款引用编号出处含糊"],
+   "applicability": "general_manual", "content_type_probe": "toc"
+  },
+  {
+   "id": "C-03", "category": "C", "split": "holdout", "type": "judgement", "role": "default",
+   "question": "在积水、结露等潮湿环境的有限空间作业，照明灯具电压应不大于 36V——这个说法对吗？",
+   "expected_docs": ["0069"],
+   "required_evidence": [
+    {"doc_id": "0069", "chunk_id": 227, "why": "3.5.3：潮湿环境12V；36V仅为一般环境上限"},
+    {"doc_id": "0079", "chunk_id": 488, "why": "练习题中36V是干扰选项"}
+   ],
+   "gold_key_points": ["说法不对", "潮湿环境限值为12V（0069 3.5.3）", "36V是一般有限环境的上限，练习题中的36V是干扰选项"],
+   "unacceptable": ["答『不对』却给不出正确数值与出处", "引用练习题选项本身作为判断依据"],
+   "applicability": "house_municipal", "content_type_probe": "quiz_trap"
+  },
+  {
+   "id": "C-04", "category": "C", "split": "holdout", "type": "content_type", "role": "default",
+   "question": "手册中列举的湖南岳阳聚香园食品公司事故案例，能作为法规依据引用吗？",
+   "expected_docs": ["0079"],
+   "required_evidence": [
+    {"doc_id": "0079", "chunk_id": 475, "why": "事故案例正文（2018-05-30，3人死亡）"},
+    {"doc_id": "0079", "chunk_id": 476, "why": "事故教训清单（非法规条款）"}
+   ],
+   "gold_key_points": ["不能作为法规依据——事故案例是警示教育材料，不是法规条款", "其教训（未辨识、未配防护、盲目施救、无预案、未培训）可作为安全管理参考"],
+   "unacceptable": ["以案例情节作为合规义务的条款依据"],
+   "applicability": "general_manual", "content_type_probe": "case"
+  },
+  {
+   "id": "D-01", "category": "D", "split": "dev", "type": "validity", "role": "default",
+   "question": "《房屋市政工程有限空间识别及施工安全作业指南》有试行版和征求意见稿两个版本，实际执行以哪个为准？",
+   "expected_docs": ["0069", "0070"],
+   "required_evidence": [
+    {"doc_id": "0069", "why": "试行版：已印发施行，现行有效"},
+    {"doc_id": "0070", "why": "征求意见稿：未生效，已被0069取代"}
+   ],
+   "gold_key_points": ["以0069《房屋市政工程有限空间识别及施工安全作业指南（试行）》为准", "0070征求意见稿未生效，不得作为现行施工依据"],
+   "unacceptable": ["称两版本可任选", "引用征求意见稿内容作为现行要求"],
+   "applicability": "house_municipal", "content_type_probe": "validity",
+   "gold_source": "docs_meta valid_status + 时效标注（3.3 已上线机制）"
+  },
+  {
+   "id": "D-02", "category": "D", "split": "dev", "type": "attachment", "role": "default",
+   "question": "《建筑起重机械备案证、房屋市政工程施工安全监督人员考核合格证书电子证照归集共享业务规程（试行）》是依据哪个通知印发的附件？",
+   "expected_docs": ["0074"],
+   "required_evidence": [{"doc_id": "0074", "why": "母通知关系仅存在于docs_meta note，正文未载"}],
+   "gold_key_points": ["建办质〔2024〕43号《关于开展建筑起重机械备案证和房屋市政工程施工安全监督人员考核合格证书电子化工作的通知》的附件"],
+   "unacceptable": ["编造其他文号", "正文无依据时假装引用条款"],
+   "applicability": "house_municipal", "content_type_probe": "attachment",
+   "gold_source": "docs_meta note only —— 已登记为元数据缺口题：当前上下文无此信息，预期基线答不出，阶段2补元数据后应可答"
+  },
+  {
+   "id": "D-03", "category": "D", "split": "holdout", "type": "validity", "role": "default",
+   "question": "《建筑与市政施工现场安全卫生与职业健康通用规范》（GB 55034-2022）是什么性质的规范？自什么时候实施？",
+   "expected_docs": ["0080"],
+   "required_evidence": [{"doc_id": "0080", "why": "性质与实施日期仅在docs_meta note，OCR正文无该信息"}],
+   "gold_key_points": ["强制性工程建设规范（全文强制）", "自2023年6月1日起实施"],
+   "unacceptable": ["编造实施日期或性质", "正文没有就说库内找不到依据却声称日期"],
+   "applicability": "national_mandatory", "content_type_probe": "meta",
+   "gold_source": "docs_meta note only —— 元数据缺口题，与D-02同类"
+  },
+  {
+   "id": "D-04", "category": "D", "split": "holdout", "type": "fact", "role": "default",
+   "question": "《工贸企业有限空间作业安全规定》自什么时候施行？同时废止了哪个文件？",
+   "expected_docs": ["0078"],
+   "required_evidence": [
+    {"doc_id": "0078", "chunk_id": 414, "why": "第二十一条收尾（尾『；』断裂）"},
+    {"doc_id": "0078", "chunk_id": 415, "why": "相邻续块：第二十二条施行与废止表述（含网页杂质）"}
+   ],
+   "gold_key_points": ["自2024年1月1日起施行", "同时废止原国家安全生产监督管理总局2013年5月20日公布的《工贸企业有限空间作业安全管理与监督暂行规定》（总局令第59号）"],
+   "unacceptable": ["把网页杂质（相关链接/备案号）当正文引用"],
+   "applicability": "gongmao", "content_type_probe": "web_junk_in_chunk",
+   "notes": "chunk 415 含抓取页面的导航/备案杂质，兼作内容噪声样本"
+  },
+  {
+   "id": "E-01", "category": "E", "split": "dev", "type": "multiturn", "role": "default",
+   "history": [
+    {"role": "user", "content": "有限空间作业前需要对哪些气体进行检测？"},
+    {"role": "assistant", "content": "作业前应进行气体检测，四合一气体检测报警仪通常检测硫化氢、一氧化碳、可燃气体和氧气浓度 [1]。"}
+   ],
+   "question": "那氧气浓度在什么范围内算合格？",
+   "expected_docs": ["0069"],
+   "required_evidence": [
+    {"doc_id": "0069", "chunk_id": 252, "why": "附录7气体检测记录表：氧气 19.5%～23.5%VOL"},
+    {"doc_id": "0079", "chunk_id": 435, "why": "可选并列：氧含量低于19.5%即缺氧"}
+   ],
+   "gold_key_points": ["氧气浓度合格范围为19.5%～23.5%VOL（0069 附录7检测记录表）", "低于19.5%为缺氧"],
+   "unacceptable": ["指代解析失败答非所问", "编造其他数值"],
+   "applicability": "house_municipal", "content_type_probe": "appendix_table"
+  },
+  {
+   "id": "E-02", "category": "E", "split": "dev", "type": "multiturn", "role": "default",
+   "history": [
+    {"role": "user", "content": "有限空间作业审批有什么要求？"},
+    {"role": "assistant", "content": "有限空间作业必须执行作业前审批制度，施工单位签发作业票，作业班组方可开展有限空间作业 [1]。"}
+   ],
+   "question": "那危大工程的专项施工方案存在哪些严重缺陷情形？",
+   "expected_docs": ["0071"],
+   "required_evidence": [
+    {"doc_id": "0071", "chunk_id": 294, "why": "严重缺陷清单·通用条款（无工程及周边环境情况描述等）"},
+    {"doc_id": "0071", "chunk_id": 303, "why": "可选：钢结构安装工程等分类条款"}
+   ],
+   "gold_key_points": ["专项施工方案严重缺陷情形见《危险性较大的分部分项工程专项施工方案严重缺陷清单（试行）》", "通用条款如：无工程及周边环境情况描述等"],
+   "unacceptable": ["话题切换失败，把有限空间/作业票内容混入答案"],
+   "applicability": "house_municipal", "content_type_probe": "body"
+  },
+  {
+   "id": "E-03", "category": "E", "split": "holdout", "type": "multiturn_role", "role": "gov",
+   "history": [
+    {"role": "user", "content": "有限空间作业前通风有什么要求？"},
+    {"role": "assistant", "content": "作业前，必须采取通风措施，且保持空气流通30min以上 [1]。"}
+   ],
+   "question": "请给出刚才所引条款的完整出处和原文。",
+   "expected_docs": ["0069"],
+   "required_evidence": [{"doc_id": "0069", "chunk_id": 233, "why": "4.5.1 通风30min（第15页）"}],
+   "gold_key_points": ["出处：《房屋市政工程有限空间识别及施工安全作业指南（试行）》4.5.1", "原文：作业前，必须采取通风措施，且保持空气流通30min以上", "角色切换不影响事实与引用（gov角色侧重原文出处）"],
+   "unacceptable": ["角色切换后丢失指代对象", "改写原文却号称逐字"],
+   "applicability": "house_municipal", "content_type_probe": "verbatim_citation"
+  },
+  {
+   "id": "E-04", "category": "E", "split": "holdout", "type": "boundary", "role": "default",
+   "history": [
+    {"role": "user", "content": "房屋市政工程有限空间作业审批按什么规定执行？"},
+    {"role": "assistant", "content": "按《房屋市政工程有限空间识别及施工安全作业指南（试行）》4.3 执行：有限空间作业必须执行作业前审批制度，施工单位签发作业票 [1]。"}
+   ],
+   "question": "重庆本地的有限空间作业审批有什么地方性规定？",
+   "expected_docs": [],
+   "required_evidence": [],
+   "gold_key_points": ["知识库未收录重庆地方性规定（库内均为国家层面文件），应说明该边界", "可按已回答的国家层面规定（0069）说明，并明确地方规定未收录"],
+   "unacceptable": ["编造地方规定或文号", "把0075/0076文档中的省份简称表当地方规定依据"],
+   "applicability": "local_gap", "content_type_probe": "boundary",
+   "notes": "已实证：『重庆市』仅在0075/0076省份简称表出现（grounding_report）"
+  },
+  {
+   "id": "F-01", "category": "F", "split": "dev", "type": "over_refusal_probe", "role": "default",
+   "question": "有限空间作业发生事故后，施工单位项目负责人接到报告后应当在多长时间内向有关部门报告？",
+   "expected_docs": ["0069"],
+   "required_evidence": [{"doc_id": "0069", "chunk_id": 242, "why": "5.3.2：接到报告后应当于1小时内向县级以上安监部门及有关部门报告"}],
+   "gold_key_points": ["应当于1小时内报告", "向事故发生地县级以上人民政府安全生产监督管理部门和负有安全生产监督管理职责的有关部门报告"],
+   "unacceptable": ["声称库内无时限规定而拒答（过度弃答）", "编造其他时限"],
+   "applicability": "house_municipal", "content_type_probe": "body",
+   "notes": "已知基线行为：PM-08同类题当前答『无时限』——本题登记为过度弃答探针"
+  },
+  {
+   "id": "F-02", "category": "F", "split": "dev", "type": "refusal", "role": "default",
+   "question": "施工现场食堂的食品卫生管理有什么要求？",
+   "expected_docs": [],
+   "required_evidence": [],
+   "gold_key_points": ["知识库未收录食品卫生管理内容，应诚实拒答"],
+   "unacceptable": ["编造要求", "把0065消防清单中『食堂』字样当食品卫生依据"],
+   "applicability": "out_of_kb", "content_type_probe": "irrelevant_hit",
+   "notes": "已实证：『食堂』仅2次命中且均在0065消防特殊建设工程清单（无关语境）"
+  },
+  {
+   "id": "F-03", "category": "F", "split": "holdout", "type": "partial_gap", "role": "default",
+   "question": "有限空间作业票的有效期是多久？",
+   "expected_docs": ["0069"],
+   "required_evidence": [
+    {"doc_id": "0069", "chunk_id": 230, "why": "4.3.2 作业票应包含的内容（可引用）"},
+    {"doc_id": "0069", "chunk_id": 229, "why": "4.3.1 审批制度（可引用）"}
+   ],
+   "gold_key_points": ["库内未规定作业票有效期（0069全文无『有效期』表述）", "不得编造时长；可说明作业票应包含的信息（4.3.2）"],
+   "unacceptable": ["编造有效期数值", "以『及时报告』类无关条文充数"],
+   "applicability": "house_municipal", "content_type_probe": "honest_gap",
+   "notes": "已实证：『有效期』在0069全文0次命中（grounding2_report）"
+  },
+  {
+   "id": "F-04", "category": "F", "split": "holdout", "type": "name_only_boundary", "role": "default",
+   "question": "施工现场安全帽的颜色有什么分类标准？",
+   "expected_docs": ["0073"],
+   "required_evidence": [{"doc_id": "0073", "chunk_id": 332, "why": "考核大纲仅列《头部防护 安全帽》标准名称（参考标准清单）"}],
+   "gold_key_points": ["库内未收录安全帽颜色分类标准的具体内容", "0073大纲仅提到《头部防护 安全帽》这一标准名称，应说明仅有名称、内容未收录"],
+   "unacceptable": ["编造红/黄/白等颜色含义", "声称有标准内容"],
+   "applicability": "name_only", "content_type_probe": "name_only",
+   "notes": "已实证：『颜色』『图形』在0069/0078/0079/0080全文0次命中（grounding3_report）"
+  }
+ ]
+}

@@ -175,6 +175,38 @@ async def _chat_stream(question: str, history: list = None, role: str = "default
     # 路径恢复 BM25 判据；BM25 无命中仍兜底（向量不救零命中，ADR-002 不变）。
     top_cov = max(top_cov, max((h["coverage"] for h in primary), default=0.0))
 
+    # ---- 相邻条款定向注入（3.1，2026-11-06）：块尾断裂（，、；：）→ 附 next ----
+    # 计划原定「仅 top-3」，实测目标案例 PM-06 的断裂块（0065 清单（一）~（五），
+    # 尾「；」）排第 9 在补位——按断裂信号检测（全库仅 10% 块命中）比按位次
+    # 更准且预算更省。相邻块只进 LLM 上下文（build_context 消费 adjacent_next），
+    # 不进 sources 编号体系（_sources_payload 只挑固定字段），引用归源块编号。
+    # next 已在上下文内则不注入（去重）；注入上限 3 块控长（DEF-04 长上下文拒答
+    # 教训）。prev 不注入：中文法规「下文承接上文」语义向前，前文缺失可由
+    # 锚点+问题词面召回兜住，反向注入收益无实证。
+    in_ctx_ids = {h["chunk_id"] for h in context_hits}
+    _adj_count = 0
+    for h in context_hits:
+        if _adj_count >= 3:
+            break
+        tail = h["text"].rstrip()[-1:] if h["text"].rstrip() else ""
+        if tail not in ("，", "、", "；", "："):
+            continue
+        try:
+            ctx = retrieval.get_chunk_context(h["chunk_id"])
+        except Exception:
+            continue
+        nxt = (ctx or {}).get("next")
+        if not nxt:
+            continue
+        try:
+            nxt_id = retrieval.get_chunk_id_by_seq(h["doc_id"], nxt["seq"])
+        except Exception:
+            nxt_id = None
+        if nxt_id is not None and nxt_id in in_ctx_ids:
+            continue  # 相邻块已被检索召回，无需注入
+        h["adjacent_next"] = nxt["text"]
+        _adj_count += 1
+
     yield _sse("status", {"stage": "retrieved", "hits": len(context_hits),
                           "docs": len({h["doc_id"] for h in context_hits})})
 
@@ -210,10 +242,20 @@ async def _chat_stream(question: str, history: list = None, role: str = "default
     yield _sse("sources", {"sources": sources})
 
     # ---- LLM 流式生成（角色化提示词，迭代5/ADR-003）----
+    # 3.1 相邻注入只进 LLM 上下文：_sources_payload 不透出 adjacent_next
+    # （SSE 契约与前端卡片不变），此处按位序合回再交给 stream_chat。
+    llm_sources = []
+    for s, h in zip(sources, context_hits):
+        if h.get("adjacent_next"):
+            s2 = dict(s)
+            s2["adjacent_next"] = h["adjacent_next"]
+            llm_sources.append(s2)
+        else:
+            llm_sources.append(s)
     answer_started = False
     try:
         buf = ""
-        async for delta in llm.stream_chat(sources, question, history=history, role=role):
+        async for delta in llm.stream_chat(llm_sources, question, history=history, role=role):
             answer_started = True
             buf += delta
             yield _sse("delta", {"text": delta})

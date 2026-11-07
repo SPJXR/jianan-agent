@@ -177,8 +177,12 @@ def _snippet_status(s: dict) -> str:
 def build_context(snippets: list[dict]) -> str:
     """把 sources 片段装配为用户消息里的「法规片段」块（纯函数，便于单测）。
 
-    未核定语料（无〔状态〕）时输出与历史版本逐字节一致——零标注零改动，
-    保证 62 题基线在该路径上的回归红线。
+    未核定语料（无〔状态〕）且无相邻注入时输出与历史版本逐字节一致——
+    零标注零改动，保证 62 题基线在该路径上的回归红线。
+
+    相邻条款注入（3.1，2026-11-06）：片段携带 adjacent_next（源块块尾断裂时
+    由 main.py 装配的下一块逐字全文）时，附在源块之后并显式标注。相邻块
+    不进 sources 编号体系（引用卡片无对应块），引用归源块编号——幻觉红线。
     """
     ctx_lines = []
     for s in snippets:
@@ -191,7 +195,14 @@ def build_context(snippets: list[dict]) -> str:
         note = validity_note(_snippet_status(s))
         if note:
             head += note
-        ctx_lines.append(f"{head}\n{_flow(s['full'])}")
+        body = _flow(s["full"])
+        nxt = s.get("adjacent_next")
+        if nxt:
+            body += (
+                "\n〔接本片段之后的相邻条款，供衔接；引用此部分内容时仍标注"
+                f"编号 [{s['no']}]〕\n{_flow(nxt)}"
+            )
+        ctx_lines.append(f"{head}\n{body}")
     context = "\n\n".join(ctx_lines)
     if any(validity_note(_snippet_status(s)) for s in snippets):
         context = _VALIDITY_LEAD + "\n\n" + context

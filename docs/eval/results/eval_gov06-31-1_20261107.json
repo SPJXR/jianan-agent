@@ -1,0 +1,52 @@
+{
+ "summary": {
+  "base": "http://127.0.0.1:9001",
+  "tag": "gov06-31-1",
+  "date": "2026-11-07 22:28",
+  "n_total": 1,
+  "n_fact": 1,
+  "n_edge": 0,
+  "retrieval_hit3": "1/1",
+  "ctx_hit": "1/1",
+  "ctx_block_hit": "0/1",
+  "answer_full_cov": "0/1",
+  "citation_rate": "0/1",
+  "fact_all_ok": "0/1",
+  "refusal_pass": "0/0",
+  "boundary_pass": "0/0",
+  "cite_util_avg": 0.0,
+  "cite_pos_dist": "1-3位:0次 4-8位:0次 9+位:0次",
+  "t_med": 1.41,
+  "t_p95": 1.41
+ },
+ "rows": [
+  {
+   "ret_hit": true,
+   "ctx_hit": true,
+   "top3": [
+    "0069",
+    "0079"
+   ],
+   "ctx_cov": 0.25,
+   "ans_cov": 0.0,
+   "citation": false,
+   "cite_util": 0.0,
+   "cite_pos": [],
+   "miss_kw": [
+    "物理条件",
+    "危险特征",
+    "通风不良",
+    "易燃易爆"
+   ],
+   "id": "GOV-06",
+   "group": "gov",
+   "role": "gov",
+   "type": "fact",
+   "ok": false,
+   "t": 1.41,
+   "t_first": 1.24,
+   "backend": "llm",
+   "answer": "知识库中未找到与该问题直接相关的条款。建议用户换个问法或查看知识库来源。"
+  }
+ ]
+}

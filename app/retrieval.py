@@ -268,6 +268,18 @@ def hybrid_search(question: str, k: int = 8, context_query: str = ""):
     fused = _validity_partition(fused)
     return fused[:k], top_cov
 
+def get_chunk_id_by_seq(doc_id: str, seq: int) -> int | None:
+    """按文档号+seq 查 chunk_id（3.1 相邻注入去重用）。不存在返回 None。"""
+    con = sqlite3.connect(DB_PATH)
+    try:
+        row = con.execute(
+            "SELECT chunk_id FROM chunks WHERE doc_id = ? AND seq = ?",
+            (doc_id, seq)).fetchone()
+        return row[0] if row else None
+    finally:
+        con.close()
+
+
 def get_chunk_context(chunk_id: int) -> dict | None:
     """返回某 chunk 的逐字全文 + 同文档相邻 seq 的 prev/next 块。
 
