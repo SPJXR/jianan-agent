@@ -10,7 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import config, llm, prompts, retrieval, track
+from . import config, feedback, llm, prompts, retrieval, track
 
 app = FastAPI(title="建安法规问答助手")
 app.include_router(track.router)
@@ -129,9 +129,13 @@ async def _chat_stream(question: str, history: list = None, role: str = "default
     # 跨过口语化表述与法规术语的词汇鸿沟（挖坑底下干活 -> 有限空间作业）。
     # 仅在弱命中路径付出一次 8 秒内的小查询代价；改写失败则沿用原结果。
     # 弱命中（覆盖率低于 REWRITE_MIN_COVERAGE）才改写：强命中问题无需多付一次 LLM 查询
+    # feat_rewrite_*：反馈台账段特征（2026-11-12，ACE 启示落地），见 app/feedback.py
+    feat_rewrite_attempted = False
+    feat_rewrite_merged = False
     if (not hits or top_cov < config.REWRITE_MIN_COVERAGE) and config.llm_configured():
         yield _sse("status", {"stage": "rewriting", "message": "正在换一种方式检索"})
         rewritten = await llm.rewrite_query(question, history)
+        feat_rewrite_attempted = bool(rewritten and rewritten != question)
         if rewritten and rewritten != question:
             try:
                 hits2, top2 = await asyncio.to_thread(
@@ -151,6 +155,7 @@ async def _chat_stream(question: str, history: list = None, role: str = "default
                         merged[h["chunk_id"]] = h
                 hits = sorted(merged.values(), key=lambda h: h["score"], reverse=True)
                 top_cov = max(top_cov, top2)
+                feat_rewrite_merged = True
 
     # ---- 上下文装配（迭代6）：top-8 主证据 + 同文档补位（≤6 条）----
     # 答案块可能排在 9~16 位（同文档表格碎片/邻近条款稀释，2026-09-23 线上反馈：
@@ -207,6 +212,18 @@ async def _chat_stream(question: str, history: list = None, role: str = "default
         h["adjacent_next"] = nxt["text"]
         _adj_count += 1
 
+    # ---- 反馈台账段特征（2026-11-12，ACE 启示落地，ADR-011）----
+    # validity 与 build_context 的〔状态〕标注同口径（ADR-006/3.3）：
+    # 有标注才算该段「在场」，未核定（na/unknown/空）不算。
+    feat_validity = any(
+        llm.validity_note(h.get("valid_status") or "") for h in context_hits)
+    _feats = {
+        "validity": feat_validity,
+        "adjacent": _adj_count,
+        "rewrite_attempted": feat_rewrite_attempted,
+        "rewrite_merged": feat_rewrite_merged,
+    }
+
     yield _sse("status", {"stage": "retrieved", "hits": len(context_hits),
                           "docs": len({h["doc_id"] for h in context_hits})})
 
@@ -222,6 +239,8 @@ async def _chat_stream(question: str, history: list = None, role: str = "default
             "建议换个问法，或点击顶部「知识库来源」查看本助手能回答的文档范围。"
         )
         yield _sse("delta", {"text": text})
+        feedback.log_feedback(question, role, "no_answer", top_cov,
+                               len(sources), _feats)
         yield _sse("done", {"backend": "no_answer", "coverage": top_cov, "role": role})
         return
 
@@ -234,7 +253,10 @@ async def _chat_stream(question: str, history: list = None, role: str = "default
             sources = sources[:3]
         yield _sse("sources", {"sources": sources})
         yield _sse("notice", {"message": "管理员尚未配置模型服务" + ("" if weak else "，以下为检索到的原文片段")})
-        yield _sse("delta", {"text": _degraded_markdown(context_hits, weak=weak)})
+        degraded_text = _degraded_markdown(context_hits, weak=weak)
+        yield _sse("delta", {"text": degraded_text})
+        feedback.log_feedback(question, role, "retrieval", top_cov,
+                               len(sources), _feats, degraded_text)
         yield _sse("done", {"backend": "retrieval", "citations": len(sources),
                             "coverage": top_cov, "role": role})
         return
@@ -259,9 +281,16 @@ async def _chat_stream(question: str, history: list = None, role: str = "default
             answer_started = True
             buf += delta
             yield _sse("delta", {"text": delta})
+        # 反馈台账（P2+）：答案完成后机械自检 [n] 引用白名单并落盘——
+        # 自检结果不进 SSE（对外契约不变），只进 data/feedback_ledger.jsonl
+        # 供段计数台账消费（GOV-06 类漂移自动显形，见 ADR-011）。
+        feedback.log_feedback(question, role, "llm", top_cov,
+                               len(sources), _feats, buf)
         yield _sse("done", {"backend": "llm", "citations": len(sources),
                             "answer_chars": len(buf), "role": role})
     except llm.LLMError as e:
+        feedback.log_feedback(question, role, "error", top_cov,
+                               len(sources), _feats)
         if not answer_started:
             # 一个字都没生成：降级为原文展示（PRD 可用性要求）
             yield _sse("notice", {"message": f"{e.message}，以下为检索到的原文片段"})
