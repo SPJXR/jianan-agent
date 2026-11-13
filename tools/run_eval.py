@@ -30,8 +30,11 @@ import time
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, BASE_DIR)
 EVAL_SET = os.path.join(BASE_DIR, "docs", "eval", "eval_set_v2.json")
 OUT_DIR = os.path.join(BASE_DIR, "docs", "eval", "results")
+
+from app.feedback import classify_answer  # noqa: E402  # RECOMP 错误复制率（ADR-011 增补）
 
 CITE_RE = re.compile(r"\[\d+\]")
 REFUSAL_OK = ("未找到", "本助手仅提供建安法规知识问答")
@@ -133,11 +136,18 @@ def score_fact(q: dict, res: dict) -> dict:
 
 def score_edge(q: dict, res: dict) -> dict:
     a = res["answer"]
+    # RECOMP 指标（2026-11-13）：copy=证据不含答案却仍带引用复制断言；
+    # 该标记只在拒答/边界组有意义，fact 题不解读。
+    cls = classify_answer(a)
+    out = {"copy": cls["copy"], "refusal": cls["refusal"], "cited": cls["cited"],
+           "copy_review": cls["review"]}
     if q["type"] == "refusal":
-        return {"pass": any(p in a for p in REFUSAL_OK)}
+        out["pass"] = any(p in a for p in REFUSAL_OK)
+        return out
     ack = any(p in a for p in BOUNDARY_OK) or \
         ("仅" in a and any(w in a for w in ("名称", "目录", "前言")))
-    return {"pass": ack}  # 未明确说明 -> REVIEW 人工复核（是否编造需人工判断）
+    out["pass"] = ack  # 未明确说明 -> REVIEW 人工复核（是否编造需人工判断）
+    return out
 
 
 def run(args):
@@ -222,6 +232,9 @@ def run(args):
         "fact_all_ok": f"{len(full_ok)}/{len(facts)}",
         "refusal_pass": f"{sum(1 for r in refus if r['pass'])}/{len(refus)}",
         "boundary_pass": f"{sum(1 for r in bounds if r['pass'])}/{len(bounds)}",
+        "copy_rate": f"{sum(1 for r in edges if r.get('copy'))}/{len(edges)}",
+        "copy_review": f"{sum(1 for r in edges if r.get('copy_review'))}/{len(edges)}",
+        "refusal_with_cite": f"{sum(1 for r in edges if r.get('refusal') and r.get('cited'))}/{len(edges)}",
         "cite_util_avg": round(statistics.mean(utils), 2) if utils else 0.0,
         "cite_pos_dist": f"1-3位:{pos_h1}次 4-8位:{pos_h2}次 9+位:{pos_h3}次",
         "t_med": round(statistics.median(tt), 2) if tt else 0,

@@ -57,6 +57,35 @@ def check_citations(text: str, n_sources: int) -> tuple[list[int], list[int]]:
     return cites, bad
 
 
+# 与 tools/run_eval.py 的 REFUSAL_OK ∪ BOUNDARY_OK 同口径（勿各自维护词表）
+REFUSAL_MARKERS = ("未找到", "本助手仅提供建安法规知识问答",
+                   "未收录", "无该标准", "未随文本入库")
+
+# 缺席承认措辞（2026-11-13 增补）：模型明说「证据不足/未列出」并引用佐证，
+# 是**合理行为**而非错误复制——EDGE-05 案例（「未列出具体技术指标数值」
+# 并引用 [9][3] 佐证）证明：只用拒答词表会把好答案误判为 copy。
+ABSENCE_ACK = ("未列出", "未包含", "未规定", "未明确", "并未", "未直接",
+               "无相关", "无具体", "不涉及", "不足以", "无法据以")
+
+
+def classify_answer(text: str) -> dict:
+    """答案形态分类（RECOMP 启示，2026-11-13）：拒答/缺席承认/引用/复制判定。
+
+    copy=True 的语义仅在「证据不含答案」的拒答/边界题上成立：本应答
+    「未找到/未收录」，却仍带 [n] 引用给出断言——RECOMP 的「证据无关时
+    错误复制」（NQ 完整 Top-5 高达 81%）。
+    review=True：带引用但含缺席承认措辞——疑似合理佐证，需人工复核，
+    不计入 copy（防止把好答案误报，EDGE-05 即此桶）。
+    对正常 fact 题，cited∧¬refusal 是正常作答，调用方不得据此判 copy。
+    """
+    cites = extract_citations(text)
+    refusal = any(m in (text or "") for m in REFUSAL_MARKERS)
+    ack = any(m in (text or "") for m in ABSENCE_ACK)
+    return {"refusal": refusal, "cited": bool(cites), "ack": ack,
+            "copy": bool(cites) and not refusal and not ack,
+            "review": bool(cites) and not refusal and ack}
+
+
 def qhash(question: str, width: int = 16) -> str:
     """问题指纹：SHA1 前 width 位。评测题可由 tools/segment_ledger.py 用
     题面文本哈希回连线上流量，普通用户问题不可逆推。"""
@@ -87,11 +116,13 @@ def log_feedback(question: str, role: str, backend: str, coverage, n_sources: in
         "citations": [],
         "cite_bad": [],
         "answer_chars": len(answer_text or ""),
+        "refusal": False,
     }
     if answer_text:
         cites, bad = check_citations(answer_text, n_sources)
         row["citations"] = sorted(set(cites))
         row["cite_bad"] = sorted(set(bad))
+        row["refusal"] = classify_answer(answer_text)["refusal"]
     try:
         os.makedirs(os.path.dirname(LEDGER_PATH), exist_ok=True)
         with open(LEDGER_PATH, "a", encoding="utf-8") as f:

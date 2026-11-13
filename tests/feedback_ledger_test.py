@@ -49,6 +49,44 @@ class CitationCheckTest(unittest.TestCase):
         self.assertEqual(bad, [12])
 
 
+class ClassifyAnswerTest(unittest.TestCase):
+    def test_bare_refusal(self):
+        cls = feedback.classify_answer("知识库中未找到与该问题直接相关的条款。")
+        self.assertTrue(cls["refusal"])
+        self.assertFalse(cls["cited"])
+        self.assertFalse(cls["copy"])
+
+    def test_copy_from_context(self):
+        # 证据无关却仍带引用断言（RECOMP 错误复制形态）
+        cls = feedback.classify_answer("根据[2]，检查时需提前三日书面告知[4]。")
+        self.assertFalse(cls["refusal"])
+        self.assertTrue(cls["cited"])
+        self.assertTrue(cls["copy"])
+
+    def test_refusal_with_citation(self):
+        # 拒答但引用了片段说明（带说明形态，不是 copy）
+        cls = feedback.classify_answer("未找到。说明：片段[10]仅为定义，并非判定条件。")
+        self.assertTrue(cls["refusal"])
+        self.assertTrue(cls["cited"])
+        self.assertFalse(cls["copy"])
+
+    def test_boundary_marker(self):
+        cls = feedback.classify_answer("该标准未随文本入库，仅名称收录于目录。")
+        self.assertTrue(cls["refusal"])
+
+    def test_absence_ack_is_review_not_copy(self):
+        # EDGE-05 真实答案（ctx-24）：承认未列出指标并引用佐证——合理行为，
+        # 应进 review 桶而非 copy（误报防线，2026-11-13）
+        cls = feedback.classify_answer(
+            "知识库中可依据的条款只涉及应佩戴符合某国家标准的安全帽，"
+            "未列出具体技术指标数值。依据条款：安全帽 [9]。")
+        self.assertFalse(cls["refusal"])
+        self.assertTrue(cls["cited"])
+        self.assertTrue(cls["ack"])
+        self.assertFalse(cls["copy"])
+        self.assertTrue(cls["review"])
+
+
 class QhashTest(unittest.TestCase):
     def test_stable_and_short(self):
         h1 = feedback.qhash("证书快到期了怎么办理延续")
