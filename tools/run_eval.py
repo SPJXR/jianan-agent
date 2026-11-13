@@ -134,6 +134,24 @@ def score_fact(q: dict, res: dict) -> dict:
     }
 
 
+def pos_bucket_ok(facts: list) -> dict:
+    """位置偏差分桶通过率（LongLLMLingua 实证口径，2026-11-13）。
+
+    按答案所引块的最高位次（cite_pos 最大值）分桶统计综合通过率：
+    9+ 位桶 = 同文档补位区，是位置偏差的靶区（论文：原始 prompt 中间位置
+    损失 20+ 分；本项目实证 ctx-24 该桶 6/9，恰为 PM-06/PM-11 miss 集中区）。
+    每次跑 62 题免费产出——位置偏差监测器，与 cite_pos_dist（次数分布）互补。
+    """
+    buckets = {"1-3": [], "4-8": [], "9+": []}
+    for r in facts:
+        ps = r.get("cite_pos") or []
+        if not ps:
+            continue
+        k = "1-3" if max(ps) <= 3 else ("4-8" if max(ps) <= 8 else "9+")
+        buckets[k].append(1 if r.get("ok") else 0)
+    return {k: (f"{sum(v)}/{len(v)}" if v else "-") for k, v in buckets.items()}
+
+
 def score_edge(q: dict, res: dict) -> dict:
     a = res["answer"]
     # RECOMP 指标（2026-11-13）：copy=证据不含答案却仍带引用复制断言；
@@ -220,6 +238,7 @@ def run(args):
     pos_h1 = sum(1 for x in pos_pool if x <= 3)        # 头部：主证据 top-3
     pos_h2 = sum(1 for x in pos_pool if 4 <= x <= 8)   # 中段：主证据 4-8
     pos_h3 = sum(1 for x in pos_pool if x >= 9)        # 尾部：同文档补位块
+    pb = pos_bucket_ok(facts)
 
     summary = {
         "base": args.base, "tag": args.tag, "date": time.strftime("%Y-%m-%d %H:%M"),
@@ -237,6 +256,7 @@ def run(args):
         "refusal_with_cite": f"{sum(1 for r in edges if r.get('refusal') and r.get('cited'))}/{len(edges)}",
         "cite_util_avg": round(statistics.mean(utils), 2) if utils else 0.0,
         "cite_pos_dist": f"1-3位:{pos_h1}次 4-8位:{pos_h2}次 9+位:{pos_h3}次",
+        "pos_bucket_ok": f"1-3位:{pb['1-3']} 4-8位:{pb['4-8']} 9+位:{pb['9+']}",
         "t_med": round(statistics.median(tt), 2) if tt else 0,
         "t_p95": round(p(0.95), 2),
     }
