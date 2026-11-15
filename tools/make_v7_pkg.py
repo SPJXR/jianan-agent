@@ -135,18 +135,26 @@ start.bat、README.md、本文件。
 .env（含真实 API Key，必须单独上传）、data/、tests/、baselines/、
 __pycache__、*.log、旧 KB 备份、vec_index_bge-large-zh-v1.5.npz（414 块旧索引）。
 
-【Windows Server 部署】
-1) 上传本包与 .env 到服务器（.env 单独传，勿放进包、勿进任何公开仓库）。
+【Windows Server 部署（新实例 8.137.188.115 首装，装到 C:\\jianan）】
+0) 前置：安装 Python 3.13 与 VC++ 2019 运行库（onnxruntime DLL 依赖）。
+   python --version 验证；检查 9000 端口未落在系统保留段。
+1) 上传本包与 .env 到 C:\\Users\\Administrator\\（.env 单独传，勿放进包、
+   勿进任何公开仓库；可用 Workbench「上传文件」或本机 scp）。
 2) mkdir C:\\jianan -Force
    tar -xzf jianan-app-v7-20261115.tar.gz -C C:\\jianan --strip-components=1
    （必须带 --strip-components=1，否则会嵌套 C:\\jianan\\jianan-app\\ 而跑旧代码）
+   ⚠ 必须装到 C:\\jianan —— deploy/ 备份与日志轮转脚本硬编码此路径。
 3) move 上传的 .env 到 C:\\jianan\\.env
 4) python -m venv C:\\jianan\\.venv
    C:\\jianan\\.venv\\Scripts\\python.exe -m pip install -r C:\\jianan\\requirements.lock
    （若服务器缺 VC++ 运行库，先装 vc_redist.x64.exe，onnxruntime DLL 依赖）
-5) 启动：.venv\\Scripts\\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 9000
-   验证：curl http://127.0.0.1:9000/api/health （llmConfigured=true 且 hybrid ok）
-6) HTTPS 反代/备份/日志轮转见 deploy/README-ops.md；端口排除段检查见部署手册。
+5) 启动（务必 --host 0.0.0.0；**不要用 start.bat**，它硬编码 127.0.0.1 仅本机可访）：
+   .venv\\Scripts\\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 9000
+   验证：curl.exe http://127.0.0.1:9000/api/health
+   期望 status=ok、llmConfigured=true、chunks=509、hybrid.ok=true。
+6) 防火墙放行 9000 + 阿里云 ECS 安全组入方向放行 TCP 9000；
+   公网验证 http://8.137.188.115:9000/api/health
+7) 开机自启/备份/日志轮转见 deploy/README-ops.md 与 v7-新实例部署步骤。
 
 【发布后必做】
 按同日同批次口径重跑 62 题评测重定标（本机 tools/run_eval.py），
