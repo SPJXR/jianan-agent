@@ -14,7 +14,8 @@ import tempfile
 import unittest
 from unittest import mock
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, BASE)
 
 from app import feedback  # noqa: E402
 
@@ -87,6 +88,66 @@ class ClassifyAnswerTest(unittest.TestCase):
         self.assertTrue(cls["review"])
 
 
+class SentenceStatsTest(unittest.TestCase):
+    def test_split(self):
+        sents = feedback.split_sentences("依据[1]，需持证上岗。培训不得少于[2]学时！\n未找到。")
+        self.assertEqual(len(sents), 3)
+
+    def test_split_empty(self):
+        self.assertEqual(feedback.split_sentences(""), [])
+        self.assertEqual(feedback.split_sentences(None), [])
+
+    def test_stats(self):
+        st = feedback.sentence_citation_stats(
+            "依据[1]，需持证上岗。培训不少于[2]学时！\n未找到。")
+        self.assertEqual(st["n_sent"], 3)
+        self.assertEqual(st["n_cited"], 2)
+        self.assertEqual(st["uncited"], 1)
+
+
+class SentenceSupportTest(unittest.TestCase):
+    """tools/cite_precision.sentence_support 纯函数（ALCE 规则轻量版）。"""
+
+    def _load(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "cite_precision", os.path.join(BASE, "tools", "cite_precision.py"))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_supported_and_unsupported(self):
+        mod = self._load()
+        groups = [["有限空间"], ["安全培训", "培训"]]
+        blocks = ["有限空间作业应当遵守本规范。", "应急救援装备清单要求。"]
+        answer = ("从事有限空间作业需审批[1]。每次作业前须进行安全培训[2]。")
+        res = mod.sentence_support(answer, groups, blocks)
+        # 句1：组0 在句与块1 → 支持；句2：组1 在句但块2 无该组 → 不支持
+        self.assertEqual(res["tot_occ"], 2)
+        self.assertEqual(res["sup_occ"], 1)
+        # 句2 的引用 [2] 可判但不相关；句1 的 [1] 相关
+        self.assertEqual(res["judge_cites"], 2)
+        self.assertEqual(res["rel_cites"], 1)
+
+    def test_uncited_group_sentence(self):
+        mod = self._load()
+        groups = [["氧气", "19.5"]]
+        blocks = ["氧气含量应为 19.5%。"]
+        res = mod.sentence_support("氧气浓度不得低于 19.5。", groups, blocks)
+        self.assertEqual(res["tot_occ"], 1)
+        self.assertEqual(res["sup_occ"], 0)
+        self.assertEqual(res["uncited_g_sents"], 1)
+
+    def test_ungrouped_citations_not_judged(self):
+        mod = self._load()
+        groups = [["有限空间"]]
+        blocks = ["有限空间定义。", "无关块。"]
+        res = mod.sentence_support("总的来说请遵章作业[2]。", groups, blocks)
+        self.assertEqual(res["tot_occ"], 0)
+        self.assertEqual(res["judge_cites"], 0)
+        self.assertEqual(res["ung_cites"], 1)
+
+
 class QhashTest(unittest.TestCase):
     def test_stable_and_short(self):
         h1 = feedback.qhash("证书快到期了怎么办理延续")
@@ -124,6 +185,9 @@ class LogFeedbackTest(unittest.TestCase):
         self.assertEqual(row["feats"]["adjacent"], 1)
         self.assertEqual(row["citations"], [1, 3, 99])
         self.assertEqual(row["cite_bad"], [99])  # 越界被机械自检抓住
+        # 句级统计（ALCE 启示，2026-11-15）
+        self.assertEqual(row["n_sent"], 1)
+        self.assertEqual(row["n_cited"], 1)
         # 合规：不存问题原文
         self.assertNotIn("有限空间", json.dumps(row, ensure_ascii=False))
         self.assertEqual(row["qhash"],

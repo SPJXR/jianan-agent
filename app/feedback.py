@@ -86,6 +86,32 @@ def classify_answer(text: str) -> dict:
             "review": bool(cites) and not refusal and ack}
 
 
+def split_sentences(text: str) -> list[str]:
+    """句级拆分（ALCE 口径的工程近似，2026-11-15）：按 。！？；与换行切分，
+    保留句内 [n] 引用标记。引号/括号内句号不切（法规文本「（一）……。」形态
+    较多，粗切分够用于统计，不用于逐句语义判断——边界在 cite_precision 报告
+    中声明）。"""
+    s = (text or "").strip()
+    if not s:
+        return []
+    parts = re.split(r"(?<=[。！？；\n])", s)
+    return [p.strip() for p in parts if p.strip()]
+
+
+def sentence_citation_stats(text: str) -> dict:
+    """句级引用结构统计（ALCE 启示，进反馈台账）。
+
+    ALCE citation recall 的结构前提是「每个语句都有引用」——本统计在线可
+    机判且无需金标：n_sent/n_cited/uncited（句总数/带 [n] 的句数/无引用句数）。
+    支持性本身（引用的块是否支持该句）需要题面关键词组，只能离线评
+    （tools/cite_precision.py），线上不假装能判。
+    """
+    sents = split_sentences(text)
+    cited = sum(1 for s in sents if _CITE_RE.search(s))
+    return {"n_sent": len(sents), "n_cited": cited,
+            "uncited": len(sents) - cited}
+
+
 def qhash(question: str, width: int = 16) -> str:
     """问题指纹：SHA1 前 width 位。评测题可由 tools/segment_ledger.py 用
     题面文本哈希回连线上流量，普通用户问题不可逆推。"""
@@ -117,12 +143,17 @@ def log_feedback(question: str, role: str, backend: str, coverage, n_sources: in
         "cite_bad": [],
         "answer_chars": len(answer_text or ""),
         "refusal": False,
+        "n_sent": 0,
+        "n_cited": 0,
     }
     if answer_text:
         cites, bad = check_citations(answer_text, n_sources)
         row["citations"] = sorted(set(cites))
         row["cite_bad"] = sorted(set(bad))
         row["refusal"] = classify_answer(answer_text)["refusal"]
+        ss = sentence_citation_stats(answer_text)
+        row["n_sent"] = ss["n_sent"]
+        row["n_cited"] = ss["n_cited"]
     try:
         os.makedirs(os.path.dirname(LEDGER_PATH), exist_ok=True)
         with open(LEDGER_PATH, "a", encoding="utf-8") as f:
