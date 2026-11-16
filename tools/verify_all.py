@@ -9,6 +9,13 @@
    再匹配一条"判定行"才算通过；找不到判定行一律记 UNKNOWN→FAIL，不默认通过。
 2. **失败即非零退出**，便于接入 CI 或答辩现场演示。
 3. 依赖公网实例的测试标记为 SKIPPED 并写明原因，**绝不当作通过**。
+4. **运行环境本身会污染结果**。2026-11-16 实测：从带 `NO_PROXY=...,[::1],::1` 的
+   shell 启动服务时，httpx 0.28.1 解析该条目即在构造客户端时抛
+   `InvalidURL: Invalid port: ':1]'`，`/api/chat` 的 LLM 调用全部失败——报告里的
+   FAIL 测的是执行环境，不是被测代码。从这类 shell 跑之前先清掉代理变量：
+   `env -u NO_PROXY -u HTTP_PROXY -u HTTPS_PROXY .venv/Scripts/python.exe tools/verify_all.py`
+   （Windows cmd 用 `set NO_PROXY=`）。判断依据：`tests/_verify_all_server.log`
+   里若出现 `InvalidURL`，先怀疑环境，再怀疑代码。
 """
 import argparse
 import io
@@ -83,11 +90,13 @@ CHECKS = [
 
 SKIPPED = [
     ("线上实例全量验收（online_v3_test）",
-     "本项需要可访问公网实例的环境才能真实覆盖（2026-10-24 起 BASE 已改为读环境变量 "
-     "JIANAN_EVAL_BASE，默认现行实例 http://47.109.98.111:9000，不再写死旧地址）。"
+     "本项需要可访问公网实例的环境才能真实覆盖（BASE 读环境变量 JIANAN_EVAL_BASE；"
+     "按 2026-10-22 的决定，默认值不跟随实例迁移改代码，因此脚本默认值 "
+     "http://47.109.98.111:9000 指向的是那台**旧实例**，仅作回滚用；"
+     "现行实例为 http://8.137.188.115:9000，跑线上验收必须显式设置环境变量）。"
      "本机核验不探测公网、不产生真实模型费用，故列 SKIPPED 而非 PASS。"
      "**未验证不等于通过**。转为真实覆盖：在可访问实例的环境执行 "
-     "`set JIANAN_EVAL_BASE=<现行实例> && python tests/online_v3_test.py`，"
+     "`set JIANAN_EVAL_BASE=http://8.137.188.115:9000 && python tests/online_v3_test.py`，"
      "该项约 15 次 /api/chat 会产生真实模型费用与埋点计数。"),
     ("早期接口查看脚本（api_test）",
      "该脚本为 CASE 1-4 的原始 print 输出、**没有判定行**，无法机器判定通过与否。"
