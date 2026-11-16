@@ -1,6 +1,10 @@
 # 密钥与本地配置（绝不入库）
 .env
+.env.*
+!.env.example
 deploy/.env
+deploy-pkg/env*
+deploy-pkg/*.env
 *.pem
 *.key
 
@@ -46,3 +50,10 @@ Thumbs.db
 tests/*.png
 # 一次性诊断脚本
 tests/_probe_*.py
+
+# 评测基线快照与一次性 POC 产物（本地留存，不进公开仓库）
+baselines/
+tests/poc_overflow.txt
+
+# 空库副本（0 表），非交付物
+kb/jianan.db
