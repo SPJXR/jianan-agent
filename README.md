@@ -16,10 +16,10 @@
 | 项 | 当前值 | 复算入口 |
 |---|---|---|
 | 知识库 | **37 份文档 / 509 个片段** | `kb/kb.sqlite` count 查询 |
-| 时效状态 | 现行有效 12 / 试行 4 / 征求意见稿 1 / 未核定 20 | `kb/docs_meta.json` |
+| 时效状态 | 现行有效 12 / 试行 4 / 征求意见稿 1 / 通知附件类无独立时效 20；**`unknown` 0 份** | `kb/kb.sqlite` 的 `docs.valid_status` 计数 |
 | 全量评测 | **48/54**（fact）、拒答 5/5、边界 3/3（2026-11-06；本周未重跑） | `docs/eval/results/eval_ctx-31_20261106.json` |
 | 决策资产 | **11 份 ADR（ADR-001~011）** + OPEN-DECISIONS 登记册 | `docs/decisions/` |
-| 提交历史 | 56 次细粒度提交 | `git log` |
+| 提交历史 | 63 次细粒度提交（本次报告提交后即第 63 次） | `git rev-list --count HEAD` |
 | 评测量尺 | 段计数 / 错误复制率 / 位置分桶 / 句级支持性 / 弃答审计（本周新增，均为离线复算） | `docs/eval/*.md` + `tools/` |
 | 论文素材 | 9 份提取件，本周精读 6 篇，证据链汇编见 `docs/research/` | `docs/research/毕设相关工作-论文证据链汇编-20261115.md` |
 

@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-10-24 19:41:56",
- "git_head": "5243f73",
+ "generated_at": "2026-11-16 20:18:23",
+ "git_head": "ff8fc7a",
  "summary": {
   "pass": 9,
   "fail": 0,
@@ -24,7 +24,7 @@
    "name": "时效降权与鉴权单元用例（unittest）",
    "verdict": "PASS",
    "exit": 0,
-   "detail": "Ran 16 tests in 0.280s"
+   "detail": "Ran 16 tests in 0.245s"
   },
   {
    "name": "库内题检索回归（14 题阈值）",
@@ -72,7 +72,7 @@
    "name": "线上实例全量验收（online_v3_test）",
    "verdict": "SKIPPED",
    "exit": null,
-   "detail": "本项需要可访问公网实例的环境才能真实覆盖（2026-10-24 起 BASE 已改为读环境变量 JIANAN_EVAL_BASE，默认现行实例 http://47.109.98.111:9000，不再写死旧地址）。本机核验不探测公网、不产生真实模型费用，故列 SKIPPED 而非 PASS。**未验证不等于通过**。转为真实覆盖：在可访问实例的环境执行 `set JIANAN_EVAL_BASE=<现行实例> && python tests/online_v3_test.py`，该项约 15 次 /api/chat 会产生真实模型费用与埋点计数。"
+   "detail": "本项需要可访问公网实例的环境才能真实覆盖（BASE 读环境变量 JIANAN_EVAL_BASE；按 2026-10-22 的决定，默认值不跟随实例迁移改代码，因此脚本默认值 http://47.109.98.111:9000 指向的是那台**旧实例**，仅作回滚用；现行实例为 http://8.137.188.115:9000，跑线上验收必须显式设置环境变量）。本机核验不探测公网、不产生真实模型费用，故列 SKIPPED 而非 PASS。**未验证不等于通过**。转为真实覆盖：在可访问实例的环境执行 `set JIANAN_EVAL_BASE=http://8.137.188.115:9000 && python tests/online_v3_test.py`，该项约 15 次 /api/chat 会产生真实模型费用与埋点计数。"
   },
   {
    "name": "早期接口查看脚本（api_test）",
