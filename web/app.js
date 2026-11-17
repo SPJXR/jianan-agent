@@ -9,6 +9,23 @@ const charCountEl = $("#charCount");
 const sidebarEl = $("#historySidebar");
 const backdropEl = $("#historyBackdrop");
 
+// 知识库份数一律现读 /api/health，不写字面量：份数会随扩库变化，写死就会过期。
+let kbDocs = 0;
+function kbPhrase() { return kbDocs ? kbDocs + " 份" : "本地"; }
+async function loadKbCount() {
+  try {
+    const h = await (await fetch("/api/health")).json();
+    kbDocs = h.docs || 0;
+  } catch { kbDocs = 0; }
+  const sub = document.getElementById("brandSub");
+  if (sub) sub.textContent = kbDocs
+    ? `基于 ${kbDocs} 份建安法规文档 · 回答可溯源至条款`
+    : "基于本地建安法规知识库 · 回答可溯源至条款";
+  const desc = document.querySelector(".welcome-desc");
+  if (desc) desc.textContent =
+    `基于 ${kbPhrase()}建筑安全法规与政策文档的专属知识库，每条回答都标注来源条款，可直接核对原文。`;
+}
+
 const ICONS = {
   sparkles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>',
@@ -169,7 +186,7 @@ async function renderWelcome() {
       <div class="welcome-hero">
         <div class="welcome-logo">${ICONS.sparkles.replace('stroke-width="2"', 'stroke-width="1.8"')}</div>
         <h1 class="welcome-title">建安法规问答助手</h1>
-        <p class="welcome-desc">基于 34 份建筑安全法规与政策文档的专属知识库，每条回答都标注来源条款，可直接核对原文。</p>
+        <p class="welcome-desc">基于 ${kbPhrase()}建筑安全法规与政策文档的专属知识库，每条回答都标注来源条款，可直接核对原文。</p>
       </div>
       <div class="welcome-suggest-label">试试这样问</div>
       <div class="suggest-grid" id="suggestGrid"></div>
@@ -277,7 +294,7 @@ async function handleStream(reader, aiMsg, thisTurn) {
 
   const applyStatus = (d) => {
     if (d.stage === "retrieving") {
-      statusArea.innerHTML = `<div class="status-line"><span class="spinner"></span><span>正在检索 34 份法规文档</span></div>`;
+      statusArea.innerHTML = `<div class="status-line"><span class="spinner"></span><span>${kbDocs ? `正在检索 ${kbDocs} 份法规文档` : "正在检索法规库"}</span></div>`;
     } else if (d.stage === "rewriting") {
       statusArea.innerHTML = `<div class="status-line"><span class="spinner"></span><span>命中较弱，正在换一种说法重新检索</span></div>`;
     } else if (d.stage === "retrieved") {
@@ -949,6 +966,7 @@ async function setupRoles() {
 
 /* ================= 启动：恢复当前会话或欢迎态 ================= */
 function init() {
+  loadKbCount();
   const curId = loadCurrentId();
   const cur = curId ? loadSessions().find((s) => s.id === curId) : null;
   if (cur && cur.turns && cur.turns.length) loadSession(cur);
