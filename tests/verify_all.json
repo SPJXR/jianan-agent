@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-11-16 20:18:23",
- "git_head": "ff8fc7a",
+ "generated_at": "2026-11-17 13:33:36",
+ "git_head": "6a1007a",
  "summary": {
   "pass": 9,
   "fail": 0,
@@ -24,7 +24,7 @@
    "name": "时效降权与鉴权单元用例（unittest）",
    "verdict": "PASS",
    "exit": 0,
-   "detail": "Ran 16 tests in 0.245s"
+   "detail": "Ran 16 tests in 0.261s"
   },
   {
    "name": "库内题检索回归（14 题阈值）",
